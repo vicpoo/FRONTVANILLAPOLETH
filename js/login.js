@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const loginBtn = document.getElementById('loginBtn');
     
+    // URL base de tu API
+    const API_BASE_URL = 'http://localhost:8000/api';
+    
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -25,47 +28,67 @@ document.addEventListener('DOMContentLoaded', function() {
         setLoadingState(true);
         
         try {
-            // Simular llamada a la API
-            await simulateAPILogin(username, password);
+            // Llamada real a la API
+            const response = await authenticateWithAPI(username, password);
             
-            // Mostrar éxito
-            console.log('Login exitoso');
+            // Guardar el token en localStorage
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('userData', JSON.stringify(response.login));
             
-            // Redirigir después del login (aquí puedes cambiar la URL)
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 1000);
+            console.log('Login exitoso:', response);
+            
+            // Redirigir según el rol del usuario
+            redirectByRole(response.login.rol.idRol);
             
         } catch (error) {
+            console.error('Error en login:', error);
             alert(error.message || 'Error al iniciar sesión');
         } finally {
             setLoadingState(false);
         }
     }
     
-    // Simular llamada a la API
-    function simulateAPILogin(username, password) {
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // Simular validación (en producción esto vendrá de la API)
-                if (username && password) {
-                    // Simular credenciales incorrectas para demo
-                    if (password === 'error') {
-                        reject(new Error('Credenciales incorrectas'));
-                    } else {
-                        resolve({
-                            success: true,
-                            user: {
-                                username: username,
-                                token: 'simulated-token-' + Date.now()
-                            }
-                        });
-                    }
-                } else {
-                    reject(new Error('Datos incompletos'));
-                }
-            }, 1500);
+    // Función para autenticar con la API real
+    async function authenticateWithAPI(username, password) {
+        const response = await fetch(`${API_BASE_URL}/logins/autenticar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                usuario: username,
+                contrasena: password
+            })
         });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: 'Error de servidor' }));
+            throw new Error(errorData.message || `Error HTTP: ${response.status}`);
+        }
+
+        return await response.json();
+    }
+    
+    // Función para redirigir según el rol
+    function redirectByRole(roleId) {
+        let redirectUrl = '';
+        
+        switch(roleId) {
+            case 1: // Rol ID 1 -> contratos.html
+                redirectUrl = '/pages/contratos.html';
+                break;
+            case 2: // Rol ID 2 -> index.html
+                redirectUrl = 'index.html';
+                break;
+            default:
+                console.warn('Rol no reconocido, redirigiendo a página por defecto');
+                redirectUrl = 'index.html';
+        }
+        
+        // Redirigir después de un breve delay para mostrar feedback
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 1000);
     }
     
     // Controlar estado de carga
@@ -73,9 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (loginBtn) {
             if (loading) {
                 loginBtn.disabled = true;
+                loginBtn.textContent = 'Iniciando sesión...';
                 loginBtn.classList.add('loading');
             } else {
                 loginBtn.disabled = false;
+                loginBtn.textContent = 'Entrar';
                 loginBtn.classList.remove('loading');
             }
         }

@@ -4,21 +4,55 @@ class CuartosMueblesManager {
         this.cuartos = [];
         this.muebles = [];
         this.cuartoMuebles = [];
+        this.propietarios = [];
         this.currentCuarto = null;
         this.currentMueble = null;
         this.currentAction = null;
         this.currentCuartoForAssignment = null;
         this.API_BASE = 'http://localhost:8000/api';
-        // ID del propietario - ajusta según tu sistema
-        this.ID_PROPIETARIO = 1;
         this.init();
     }
 
-    init() {
+    async init() {
         this.bindEvents();
-        this.loadCuartos();
-        this.loadMuebles();
-        this.loadCuartoMuebles();
+        await this.loadPropietarios();
+        await this.loadCuartos();
+        await this.loadMuebles();
+        await this.loadCuartoMuebles();
+        this.updateStats();
+    }
+
+    async loadPropietarios() {
+        try {
+            const response = await fetch(`${this.API_BASE}/propietarios`);
+            
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            this.propietarios = Array.isArray(data) ? data : [];
+            this.renderPropietariosSelect();
+            this.updateStats();
+        } catch (error) {
+            console.error('Error cargando propietarios:', error);
+            this.propietarios = [];
+            this.showError('Error al cargar los propietarios: ' + error.message);
+        }
+    }
+
+    renderPropietariosSelect() {
+        const select = document.getElementById('propietarioCuarto');
+        if (!select) return;
+        
+        select.innerHTML = '<option value="">Seleccionar propietario...</option>';
+        
+        this.propietarios.forEach(propietario => {
+            const option = document.createElement('option');
+            option.value = propietario.idPropietario;
+            option.textContent = `${propietario.nombre}${propietario.gmail ? ` (${propietario.gmail})` : ''}`;
+            select.appendChild(option);
+        });
     }
 
     bindEvents() {
@@ -62,10 +96,11 @@ class CuartosMueblesManager {
             const response = await fetch(`${this.API_BASE}/cuartos`);
             
             if (!response.ok) {
-                throw new Error('Error al cargar cuartos');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             
-            this.cuartos = await response.json();
+            const data = await response.json();
+            this.cuartos = Array.isArray(data) ? data : [];
             this.renderCuartos();
             this.updateStats();
         } catch (error) {
@@ -82,7 +117,7 @@ class CuartosMueblesManager {
         if (cuartos.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px;">
+                    <td colspan="7" style="text-align: center; padding: 40px;">
                         <i class="fas fa-door-closed" style="font-size: 48px; color: var(--gray); margin-bottom: 15px;"></i>
                         <p>No se encontraron cuartos</p>
                     </td>
@@ -91,33 +126,45 @@ class CuartosMueblesManager {
             return;
         }
 
-        tbody.innerHTML = cuartos.map(cuarto => `
-            <tr>
-                <td>${cuarto.idCuarto}</td>
-                <td>${cuarto.nombreCuarto}</td>
-                <td>$${cuarto.precioAlquiler ? cuarto.precioAlquiler.toFixed(2) : '0.00'}</td>
-                <td>
-                    <span class="status-badge ${this.getStatusClass(cuarto.estadoCuarto)}">
-                        ${cuarto.estadoCuarto || 'Disponible'}
-                    </span>
-                </td>
-                <td>${cuarto.descripcionCuarto ? (cuarto.descripcionCuarto.substring(0, 50) + '...') : 'Sin descripción'}</td>
-                <td class="table-actions-cell">
-                    <button class="btn-action btn-assign" onclick="cuartosMueblesManager.asignarMuebles(${cuarto.idCuarto})">
-                        <i class="fas fa-link"></i> Muebles
-                    </button>
-                    <button class="btn-action btn-edit" onclick="cuartosMueblesManager.editarCuarto(${cuarto.idCuarto})">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button class="btn-action btn-delete" onclick="cuartosMueblesManager.eliminarCuarto(${cuarto.idCuarto})">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
-                </td>
-            </tr>
-        `).join('');
+        tbody.innerHTML = cuartos.map(cuarto => {
+            const propietario = this.propietarios.find(p => p.idPropietario === cuarto.idPropietario);
+            const nombrePropietario = propietario ? propietario.nombre : 'Desconocido';
+            
+            return `
+                <tr>
+                    <td>${cuarto.idCuarto}</td>
+                    <td>${this.escapeHtml(cuarto.nombreCuarto)}</td>
+                    <td>${this.escapeHtml(nombrePropietario)}</td>
+                    <td>$${cuarto.precioAlquiler ? parseFloat(cuarto.precioAlquiler).toFixed(2) : '0.00'}</td>
+                    <td>
+                        <span class="status-badge ${this.getStatusClass(cuarto.estadoCuarto)}">
+                            ${cuarto.estadoCuarto || 'Disponible'}
+                        </span>
+                    </td>
+                    <td>${cuarto.descripcionCuarto ? (this.escapeHtml(cuarto.descripcionCuarto).substring(0, 50) + '...') : 'Sin descripción'}</td>
+                    <td class="table-actions-cell">
+                        <button class="btn-action btn-assign" onclick="cuartosMueblesManager.asignarMuebles(${cuarto.idCuarto})">
+                            <i class="fas fa-link"></i> Muebles
+                        </button>
+                        <button class="btn-action btn-edit" onclick="cuartosMueblesManager.editarCuarto(${cuarto.idCuarto})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn-action btn-delete" onclick="cuartosMueblesManager.eliminarCuarto(${cuarto.idCuarto})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
     }
 
     showModalCuarto(cuarto = null) {
+        // Verificar que tenemos propietarios antes de mostrar el modal
+        if (this.propietarios.length === 0) {
+            this.showError('No hay propietarios registrados. Por favor, crea un propietario primero.');
+            return;
+        }
+
         this.currentCuarto = cuarto;
         const modal = document.getElementById('modalCuarto');
         const title = document.getElementById('modalCuartoTitle');
@@ -135,55 +182,76 @@ class CuartosMueblesManager {
     }
 
     populateCuartoForm(cuarto) {
-        document.getElementById('nombreCuarto').value = cuarto.nombreCuarto;
+        document.getElementById('nombreCuarto').value = cuarto.nombreCuarto || '';
         document.getElementById('precioAlquiler').value = cuarto.precioAlquiler || '';
         document.getElementById('estadoCuarto').value = cuarto.estadoCuarto || '';
         document.getElementById('descripcionCuarto').value = cuarto.descripcionCuarto || '';
+        
+        // Seleccionar el propietario correcto en el selector
+        const propietarioSelect = document.getElementById('propietarioCuarto');
+        if (propietarioSelect) {
+            propietarioSelect.value = cuarto.idPropietario || '';
+        }
     }
 
     async guardarCuarto(e) {
         e.preventDefault();
         
+        // Verificar que tenemos propietarios
+        if (this.propietarios.length === 0) {
+            this.showError('No hay propietarios registrados. No se puede guardar el cuarto.');
+            return;
+        }
+        
         try {
             this.showLoading(true, 'btnGuardarCuarto');
             
             const formData = new FormData(e.target);
+            const idPropietario = parseInt(formData.get('propietarioCuarto'));
             
+            if (!idPropietario) {
+                throw new Error('Debe seleccionar un propietario');
+            }
+
             const cuartoData = {
-                idPropietario: this.ID_PROPIETARIO,
-                nombreCuarto: formData.get('nombreCuarto'),
-                precioAlquiler: parseFloat(formData.get('precioAlquiler')),
+                idPropietario: idPropietario,
+                nombreCuarto: formData.get('nombreCuarto').trim(),
+                precioAlquiler: formData.get('precioAlquiler') ? parseFloat(formData.get('precioAlquiler')) : null,
                 estadoCuarto: formData.get('estadoCuarto') || null,
                 descripcionCuarto: formData.get('descripcionCuarto') || null
             };
 
-            let response;
-            if (this.currentCuarto) {
-                response = await fetch(`${this.API_BASE}/cuartos/${this.currentCuarto.idCuarto}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(cuartoData)
-                });
-            } else {
-                response = await fetch(`${this.API_BASE}/cuartos`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(cuartoData)
-                });
+            // Validaciones adicionales
+            if (!cuartoData.nombreCuarto) {
+                throw new Error('El nombre del cuarto es requerido');
             }
+
+            let url = `${this.API_BASE}/cuartos`;
+            let method = 'POST';
+
+            if (this.currentCuarto) {
+                url = `${this.API_BASE}/cuartos/${this.currentCuarto.idCuarto}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(cuartoData)
+            });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al guardar el cuarto');
             }
 
+            const responseData = await response.json();
+
             this.showSuccess(`Cuarto ${this.currentCuarto ? 'actualizado' : 'creado'} correctamente`);
             this.hideModals();
-            this.loadCuartos();
+            await this.loadCuartos();
 
         } catch (error) {
             console.error('Error:', error);
@@ -218,9 +286,9 @@ class CuartosMueblesManager {
         const cuartosFiltrados = this.cuartos.filter(cuarto => {
             const searchText = termino.toLowerCase();
             return (
-                cuarto.nombreCuarto?.toLowerCase().includes(searchText) ||
-                cuarto.estadoCuarto?.toLowerCase().includes(searchText) ||
-                cuarto.descripcionCuarto?.toLowerCase().includes(searchText)
+                (cuarto.nombreCuarto && cuarto.nombreCuarto.toLowerCase().includes(searchText)) ||
+                (cuarto.estadoCuarto && cuarto.estadoCuarto.toLowerCase().includes(searchText)) ||
+                (cuarto.descripcionCuarto && cuarto.descripcionCuarto.toLowerCase().includes(searchText))
             );
         });
 
@@ -233,10 +301,11 @@ class CuartosMueblesManager {
             const response = await fetch(`${this.API_BASE}/catalogo-muebles`);
             
             if (!response.ok) {
-                throw new Error('Error al cargar muebles');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
             
-            this.muebles = await response.json();
+            const data = await response.json();
+            this.muebles = Array.isArray(data) ? data : [];
             this.renderMuebles();
             this.updateStats();
         } catch (error) {
@@ -263,8 +332,8 @@ class CuartosMueblesManager {
         tbody.innerHTML = muebles.map(mueble => `
             <tr>
                 <td>${mueble.idCatalogoMueble}</td>
-                <td>${mueble.nombreMueble}</td>
-                <td>${mueble.descripcion ? (mueble.descripcion.substring(0, 50) + '...') : 'Sin descripción'}</td>
+                <td>${this.escapeHtml(mueble.nombreMueble)}</td>
+                <td>${mueble.descripcion ? (this.escapeHtml(mueble.descripcion).substring(0, 50) + '...') : 'Sin descripción'}</td>
                 <td class="table-actions-cell">
                     <button class="btn-action btn-edit" onclick="cuartosMueblesManager.editarMueble(${mueble.idCatalogoMueble})">
                         <i class="fas fa-edit"></i> Editar
@@ -295,7 +364,7 @@ class CuartosMueblesManager {
     }
 
     populateMuebleForm(mueble) {
-        document.getElementById('nombreMueble').value = mueble.nombreMueble;
+        document.getElementById('nombreMueble').value = mueble.nombreMueble || '';
         document.getElementById('descripcionMueble').value = mueble.descripcion || '';
     }
 
@@ -308,37 +377,41 @@ class CuartosMueblesManager {
             const formData = new FormData(e.target);
             
             const muebleData = {
-                nombreMueble: formData.get('nombreMueble'),
+                nombreMueble: formData.get('nombreMueble').trim(),
                 descripcion: formData.get('descripcionMueble') || null
             };
 
-            let response;
-            if (this.currentMueble) {
-                response = await fetch(`${this.API_BASE}/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(muebleData)
-                });
-            } else {
-                response = await fetch(`${this.API_BASE}/catalogo-muebles`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(muebleData)
-                });
+            // Validaciones adicionales
+            if (!muebleData.nombreMueble) {
+                throw new Error('El nombre del mueble es requerido');
             }
+
+            let url = `${this.API_BASE}/catalogo-muebles`;
+            let method = 'POST';
+
+            if (this.currentMueble) {
+                url = `${this.API_BASE}/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(muebleData)
+            });
 
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || 'Error al guardar el mueble');
             }
 
+            const responseData = await response.json();
+
             this.showSuccess(`Mueble ${this.currentMueble ? 'actualizado' : 'creado'} correctamente`);
             this.hideModals();
-            this.loadMuebles();
+            await this.loadMuebles();
 
         } catch (error) {
             console.error('Error:', error);
@@ -373,8 +446,8 @@ class CuartosMueblesManager {
         const mueblesFiltrados = this.muebles.filter(mueble => {
             const searchText = termino.toLowerCase();
             return (
-                mueble.nombreMueble?.toLowerCase().includes(searchText) ||
-                mueble.descripcion?.toLowerCase().includes(searchText)
+                (mueble.nombreMueble && mueble.nombreMueble.toLowerCase().includes(searchText)) ||
+                (mueble.descripcion && mueble.descripcion.toLowerCase().includes(searchText))
             );
         });
 
@@ -387,21 +460,28 @@ class CuartosMueblesManager {
             const response = await fetch(`${this.API_BASE}/cuarto-muebles`);
             
             if (!response.ok) {
-                throw new Error('Error al cargar cuarto muebles');
+                // Si falla, no es crítico, continuamos sin las asignaciones
+                console.warn('No se pudieron cargar las asignaciones de muebles');
+                this.cuartoMuebles = [];
+                return;
             }
             
-            this.cuartoMuebles = await response.json();
+            const data = await response.json();
+            this.cuartoMuebles = Array.isArray(data) ? data : [];
             this.updateStats();
         } catch (error) {
             console.error('Error:', error);
-            this.showError('Error al cargar las asignaciones de muebles');
+            this.cuartoMuebles = [];
         }
     }
 
     async asignarMuebles(idCuarto) {
         this.currentCuartoForAssignment = this.cuartos.find(c => c.idCuarto === idCuarto);
         
-        if (!this.currentCuartoForAssignment) return;
+        if (!this.currentCuartoForAssignment) {
+            this.showError('Cuarto no encontrado');
+            return;
+        }
 
         const modal = document.getElementById('modalAsignarMuebles');
         const title = document.getElementById('modalAsignarTitle');
@@ -431,10 +511,10 @@ class CuartosMueblesManager {
                 ? mueblesDisponibles.map(mueble => `
                     <div class="mueble-item">
                         <div class="mueble-info">
-                            <h4>${mueble.nombreMueble}</h4>
-                            <p>${mueble.descripcion || 'Sin descripción'}</p>
+                            <h4>${this.escapeHtml(mueble.nombreMueble)}</h4>
+                            <p>${mueble.descripcion ? this.escapeHtml(mueble.descripcion) : 'Sin descripción'}</p>
                         </div>
-                        <button class="btn-add" onclick="cuartosMueblesManager.agregarMueble(${idCuarto}, ${mueble.idCatalogoMueble})">
+                        <button class="btn-add" onclick="cuartosMueblesManager.agregarMuebleACuarto(${idCuarto}, ${mueble.idCatalogoMueble})">
                             <i class="fas fa-plus"></i> Agregar
                         </button>
                     </div>
@@ -445,21 +525,21 @@ class CuartosMueblesManager {
             asignadosContainer.innerHTML = mueblesAsignados.length > 0
                 ? mueblesAsignados.map(cm => {
                     const mueble = this.muebles.find(m => m.idCatalogoMueble === cm.idCatalogoMueble);
-                    return `
+                    return mueble ? `
                         <div class="mueble-item">
                             <div class="mueble-info">
-                                <h4>${mueble ? mueble.nombreMueble : 'Desconocido'}</h4>
-                                <p>${mueble ? (mueble.descripcion || 'Sin descripción') : ''}</p>
+                                <h4>${this.escapeHtml(mueble.nombreMueble)}</h4>
+                                <p>${mueble.descripcion ? this.escapeHtml(mueble.descripcion) : 'Sin descripción'}</p>
                             </div>
                             <div class="mueble-cantidad">
                                 <input type="number" value="${cm.cantidad || 0}" min="0" 
-                                    onchange="cuartosMueblesManager.actualizarCantidad(${cm.idCuartoMueble}, this.value)">
-                                <button class="btn-remove" onclick="cuartosMueblesManager.removerMueble(${cm.idCuartoMueble})">
+                                    onchange="cuartosMueblesManager.actualizarCantidadMueble(${cm.idCuartoMueble}, this.value)">
+                                <button class="btn-remove" onclick="cuartosMueblesManager.removerMuebleDeCuarto(${cm.idCuartoMueble})">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </div>
-                    `;
+                    ` : '<div class="mueble-item">Mueble no encontrado</div>';
                 }).join('')
                 : '<p style="text-align: center; color: var(--dark-gray);">No hay muebles asignados</p>';
 
@@ -469,27 +549,29 @@ class CuartosMueblesManager {
         }
     }
 
-    async agregarMueble(idCuarto, idCatalogoMueble) {
+    async agregarMuebleACuarto(idCuarto, idCatalogoMueble) {
         try {
+            const cuartoMuebleData = {
+                idCuarto: idCuarto,
+                idCatalogoMueble: idCatalogoMueble,
+                cantidad: 1,
+                estado: null
+            };
+
             const response = await fetch(`${this.API_BASE}/cuarto-muebles`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    idCuarto: idCuarto,
-                    idCatalogoMueble: idCatalogoMueble,
-                    cantidad: 1,
-                    estado: null
-                })
+                body: JSON.stringify(cuartoMuebleData)
             });
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(errorText || 'Error al agregar el mueble');
+                throw new Error(errorText || 'Error al agregar el mueble al cuarto');
             }
 
-            this.showSuccess('Mueble agregado correctamente');
+            this.showSuccess('Mueble agregado correctamente al cuarto');
             await this.renderMueblesAsignacion(idCuarto);
             await this.loadCuartoMuebles();
 
@@ -499,7 +581,7 @@ class CuartosMueblesManager {
         }
     }
 
-    async removerMueble(idCuartoMueble) {
+    async removerMuebleDeCuarto(idCuartoMueble) {
         try {
             const response = await fetch(`${this.API_BASE}/cuarto-muebles/${idCuartoMueble}`, {
                 method: 'DELETE'
@@ -507,11 +589,13 @@ class CuartosMueblesManager {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(errorText || 'Error al remover el mueble');
+                throw new Error(errorText || 'Error al remover el mueble del cuarto');
             }
 
-            this.showSuccess('Mueble removido correctamente');
-            await this.renderMueblesAsignacion(this.currentCuartoForAssignment.idCuarto);
+            this.showSuccess('Mueble removido correctamente del cuarto');
+            if (this.currentCuartoForAssignment) {
+                await this.renderMueblesAsignacion(this.currentCuartoForAssignment.idCuarto);
+            }
             await this.loadCuartoMuebles();
 
         } catch (error) {
@@ -520,7 +604,7 @@ class CuartosMueblesManager {
         }
     }
 
-    async actualizarCantidad(idCuartoMueble, nuevaCantidad) {
+    async actualizarCantidadMueble(idCuartoMueble, nuevaCantidad) {
         try {
             const cantidad = parseInt(nuevaCantidad);
             if (isNaN(cantidad) || cantidad < 0) {
@@ -567,11 +651,18 @@ class CuartosMueblesManager {
         const cuartosDisponibles = this.cuartos.filter(c => !c.estadoCuarto || c.estadoCuarto === '' || c.estadoCuarto === 'Disponible').length;
         const totalMuebles = this.muebles.length;
         const totalAsignaciones = this.cuartoMuebles.length;
+        const totalPropietarios = this.propietarios.length;
 
         document.getElementById('totalCuartos').textContent = totalCuartos;
         document.getElementById('cuartosDisponibles').textContent = cuartosDisponibles;
         document.getElementById('totalMuebles').textContent = totalMuebles;
         document.getElementById('totalAsignaciones').textContent = totalAsignaciones;
+        
+        // Actualizar estadística de propietarios si existe
+        const totalPropietariosElement = document.getElementById('totalPropietarios');
+        if (totalPropietariosElement) {
+            totalPropietariosElement.textContent = totalPropietarios;
+        }
     }
 
     showConfirmModal(message, action) {
@@ -598,8 +689,8 @@ class CuartosMueblesManager {
 
                 this.showSuccess('Cuarto eliminado correctamente');
                 this.hideModals();
-                this.loadCuartos();
-                this.loadCuartoMuebles();
+                await this.loadCuartos();
+                await this.loadCuartoMuebles();
             } else if (this.currentAction === 'eliminarMueble' && this.currentMueble) {
                 const response = await fetch(`${this.API_BASE}/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`, {
                     method: 'DELETE'
@@ -612,8 +703,8 @@ class CuartosMueblesManager {
 
                 this.showSuccess('Mueble eliminado correctamente');
                 this.hideModals();
-                this.loadMuebles();
-                this.loadCuartoMuebles();
+                await this.loadMuebles();
+                await this.loadCuartoMuebles();
             }
         } catch (error) {
             console.error('Error:', error);
@@ -661,6 +752,9 @@ class CuartosMueblesManager {
     }
 
     showNotification(message, type) {
+        // Eliminar notificaciones existentes
+        document.querySelectorAll('.notification').forEach(notif => notif.remove());
+
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.style.cssText = `
@@ -668,12 +762,14 @@ class CuartosMueblesManager {
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'};
+            background: ${type === 'success' ? '#28a745' : '#dc3545'};
             color: white;
             border-radius: 6px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 10000;
             animation: slideInRight 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
         `;
         notification.textContent = message;
 
@@ -686,7 +782,18 @@ class CuartosMueblesManager {
                     document.body.removeChild(notification);
                 }
             }, 300);
-        }, 3000);
+        }, 4000);
+    }
+
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 }
 

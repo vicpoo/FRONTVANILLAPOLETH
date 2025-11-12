@@ -37,6 +37,9 @@
                     <button class="btn-primary" id="btnNuevoMueble">
                         <i class="fas fa-plus"></i> Nuevo Mueble
                     </button>
+                    <button class="btn-secondary" id="btnGestionPropietarios">
+                        <i class="fas fa-user"></i> Propietarios
+                    </button>
                 </div>
             </header>
 
@@ -78,6 +81,15 @@
                         <p>Muebles Asignados</p>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPropietarios">0</h3>
+                        <p>Propietarios</p>
+                    </div>
+                </div>
             </section>
 
             <!-- Sección de Cuartos -->
@@ -94,6 +106,7 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
+                                <th>Propietario</th>
                                 <th>Precio Alquiler</th>
                                 <th>Estado</th>
                                 <th>Descripción</th>
@@ -148,6 +161,13 @@
                         <input type="text" id="nombreCuarto" name="nombreCuarto" required maxlength="100">
                     </div>
                     <div class="form-group">
+                        <label for="propietarioCuarto">Propietario *</label>
+                        <select id="propietarioCuarto" name="propietarioCuarto" required>
+                            <option value="">Seleccionar propietario...</option>
+                            <!-- Las opciones se llenarán dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="precioAlquiler">Precio de Alquiler *</label>
                         <input type="number" id="precioAlquiler" name="precioAlquiler" step="0.01" min="0" required>
                     </div>
@@ -197,6 +217,57 @@
                     <button type="submit" class="btn-primary" id="btnGuardarMueble">Guardar Mueble</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Gestión de Propietarios -->
+    <div id="modalPropietarios" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gestión de Propietarios</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table id="propietariosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Gmail</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="propietariosTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-section" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <h3>Nuevo Propietario</h3>
+                    <form id="propietarioForm">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nombrePropietario">Nombre *</label>
+                                <input type="text" id="nombrePropietario" name="nombrePropietario" required maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="gmailPropietario">Gmail</label>
+                                <input type="email" id="gmailPropietario" name="gmailPropietario" maxlength="100">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary" id="btnGuardarPropietario">
+                                <i class="fas fa-save"></i> Guardar Propietario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="btnCerrarPropietarios">Cerrar</button>
+            </div>
         </div>
     </div>
 
