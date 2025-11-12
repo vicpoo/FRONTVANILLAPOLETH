@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Pagos</title>
+    <link rel="stylesheet" href="../css/pagos.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                     <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li class="active"><a href="pagos.html"><i class="fas fa-money-bill-wave"></i> Pagos</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestión de Pagos</h1>
+                <button class="btn-primary" id="btnNuevoPago">
+                    <i class="fas fa-plus"></i> Nuevo Pago
+                </button>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalPagos">0</h3>
+                        <p>Total Pagos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pagosEsteMes">0</h3>
+                        <p>Este Mes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pagosPendientes">0</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="ingresosTotales">$0</h3>
+                        <p>Ingresos Totales</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pagos Table -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Lista de Pagos</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchInput" placeholder="Buscar pago..." class="search-input">
+                        <button class="btn-secondary" id="btnExportar">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="pagosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Contrato</th>
+                                <th>Fecha Pago</th>
+                                <th>Concepto</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pagosTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo Pago -->
+    <div id="modalPago" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Pago</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="pagoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="idContrato">Contrato *</label>
+                        <select id="idContrato" name="idContrato" required>
+                            <option value="">Cargando contratos...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaPago">Fecha Pago *</label>
+                        <input type="date" id="fechaPago" name="fechaPago" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="concepto">Concepto</label>
+                        <input type="text" id="concepto" name="concepto" placeholder="Descripción del pago" maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="montoPagado">Monto Pagado *</label>
+                        <input type="number" id="montoPagado" name="montoPagado" step="0.01" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">Registrar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>¿Estás seguro?</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmacionMensaje">Confirma la acción</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/pagos.js"></script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!-- contratos.html-->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Contratos</title>
+    <link rel="stylesheet" href="../css/contratos.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li class="active"><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                   <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li><a href="pagos.html"><i class="fas fa-money-bill-wave"></i> Pagos</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestión de Contratos</h1>
+                <button class="btn-primary" id="btnNuevoContrato">
+                    <i class="fas fa-plus"></i> Nuevo Contrato
+                </button>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalContratos">0</h3>
+                        <p>Total Contratos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="contratosActivos">0</h3>
+                        <p>Contratos Activos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="contratosPorVencer">0</h3>
+                        <p>Por Vencer</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="contratosExpirados">0</h3>
+                        <p>Expirados</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Contratos Table -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Lista de Contratos</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchInput" placeholder="Buscar contrato..." class="search-input">
+                        <button class="btn-secondary" id="btnExportar">
+                            <i class="fas fa-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="contratosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Inquilino</th>
+                                <th>Cuarto</th>
+                                <th>Fecha Inicio</th>
+                                <th>Fecha Fin</th>
+                                <th>Monto</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contratosTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo Contrato -->
+    <div id="modalContrato" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Contrato</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="contratoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="idInquilino">Inquilino *</label>
+                        <select id="idInquilino" name="idInquilino" required>
+                            <option value="">Cargando inquilinos...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="idCuarto">Cuarto *</label>
+                        <select id="idCuarto" name="idCuarto" required>
+                            <option value="">Cargando cuartos...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaInicio">Fecha Inicio *</label>
+                        <input type="date" id="fechaInicio" name="fechaInicio" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaFinalizacion">Fecha Finalización</label>
+                        <input type="date" id="fechaFinalizacion" name="fechaFinalizacion">
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaPagoEstablecida">Fecha Pago</label>
+                        <input type="date" id="fechaPagoEstablecida" name="fechaPagoEstablecida">
+                    </div>
+                    <div class="form-group">
+                        <label for="montoRentaAcordada">Monto Renta *</label>
+                        <input type="number" id="montoRentaAcordada" name="montoRentaAcordada" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="estadoContrato">Estado</label>
+                        <select id="estadoContrato" name="estadoContrato">
+                            <option value="ACTIVO">Activo</option>
+                            <option value="INACTIVO">Inactivo</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="FINALIZADO">Finalizado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Contrato</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>¿Estás seguro?</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmacionMensaje">Confirma la acción</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/contratos.js"></script>
+</body>
+</html>

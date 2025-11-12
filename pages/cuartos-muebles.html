@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Cuartos y Muebles</title>
+    <link rel="stylesheet" href="../css/cuartos-muebles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                    <li class="active"><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li><a href="pagos.html"><i class="fas fa-money-bill-wave"></i> Pagos</a></li>
+                    <li><a href="#"><i class="fas fa-cog"></i> Configuración</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestión de Cuartos y Muebles</h1>
+                <div class="header-buttons">
+                    <button class="btn-primary" id="btnNuevoCuarto">
+                        <i class="fas fa-plus"></i> Nuevo Cuarto
+                    </button>
+                    <button class="btn-primary" id="btnNuevoMueble">
+                        <i class="fas fa-plus"></i> Nuevo Mueble
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-door-closed"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalCuartos">0</h3>
+                        <p>Total Cuartos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="cuartosDisponibles">0</h3>
+                        <p>Cuartos Disponibles</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-couch"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalMuebles">0</h3>
+                        <p>Total Muebles</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalAsignaciones">0</h3>
+                        <p>Muebles Asignados</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Cuartos -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Lista de Cuartos</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchCuartosInput" placeholder="Buscar cuarto..." class="search-input">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="cuartosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Precio Alquiler</th>
+                                <th>Estado</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuartosTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Sección de Muebles del Catálogo -->
+            <section class="table-section" style="margin-top: 30px;">
+                <div class="table-header">
+                    <h2>Catálogo de Muebles</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchMueblesInput" placeholder="Buscar mueble..." class="search-input">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="mueblesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mueblesTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo/Editar Cuarto -->
+    <div id="modalCuarto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalCuartoTitle">Nuevo Cuarto</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="cuartoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombreCuarto">Nombre del Cuarto *</label>
+                        <input type="text" id="nombreCuarto" name="nombreCuarto" required maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="precioAlquiler">Precio de Alquiler *</label>
+                        <input type="number" id="precioAlquiler" name="precioAlquiler" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="estadoCuarto">Estado</label>
+                        <select id="estadoCuarto" name="estadoCuarto">
+                            <option value="">Disponible</option>
+                            <option value="Ocupado">Ocupado</option>
+                            <option value="Mantenimiento">Mantenimiento</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="descripcionCuarto">Descripción</label>
+                        <textarea id="descripcionCuarto" name="descripcionCuarto" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarCuarto">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarCuarto">Guardar Cuarto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Nuevo/Editar Mueble -->
+    <div id="modalMueble" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalMuebleTitle">Nuevo Mueble</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="muebleForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombreMueble">Nombre del Mueble *</label>
+                        <input type="text" id="nombreMueble" name="nombreMueble" required maxlength="100">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="descripcionMueble">Descripción</label>
+                        <textarea id="descripcionMueble" name="descripcionMueble" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarMueble">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarMueble">Guardar Mueble</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Asignar Muebles al Cuarto -->
+    <div id="modalAsignarMuebles" class="modal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modalAsignarTitle">Asignar Muebles al Cuarto</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="muebles-asignacion-container">
+                    <div class="muebles-disponibles">
+                        <h3>Muebles Disponibles</h3>
+                        <div id="mueblesDisponiblesList" class="muebles-list">
+                            <!-- Lista de muebles disponibles -->
+                        </div>
+                    </div>
+                    <div class="muebles-asignados">
+                        <h3>Muebles del Cuarto</h3>
+                        <div id="mueblesAsignadosList" class="muebles-list">
+                            <!-- Lista de muebles asignados -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="btnCerrarAsignar">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>¿Estás seguro?</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmacionMensaje">Confirma la acción</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/cuartos-muebles.js"></script>
+</body>
+</html>
