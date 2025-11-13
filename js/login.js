@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 redirectUrl = '/pages/contratos.html';
                 break;
             case 2: // Rol ID 2 -> index.html
-                redirectUrl = 'index.html';
+                redirectUrl = '/pages/pagos.html';
                 break;
             default:
                 console.warn('Rol no reconocido, redirigiendo a página por defecto');
