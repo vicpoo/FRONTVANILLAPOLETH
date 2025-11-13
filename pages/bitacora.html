@@ -1,0 +1,307 @@
+<!-- bitacora.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitácora de Reportes</title>
+    <link rel="stylesheet" href="../css/bitacora.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                    <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li class="active"><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>
+                    <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Bitácora de Reportes</h1>
+                <button class="btn-primary" id="btnNuevoReporte">
+                    <i class="fas fa-plus"></i> Nuevo Reporte
+                </button>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalReportes">0</h3>
+                        <p>Total Reportes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="reportesPendientes">0</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="reportesResueltos">0</h3>
+                        <p>Resueltos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="reportesCancelados">0</h3>
+                        <p>Cancelados</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filtros -->
+            <section class="filters-section">
+                <div class="filters-header">
+                    <h2>Filtros</h2>
+                </div>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="filterEstado">Estado</label>
+                        <select id="filterEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN_PROCESO">En Proceso</option>
+                            <option value="RESUELTO">Resuelto</option>
+                            <option value="CANCELADO">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterTipo">Tipo</label>
+                        <select id="filterTipo">
+                            <option value="">Todos los tipos</option>
+                            <option value="MANTENIMIENTO">Mantenimiento</option>
+                            <option value="URGENTE">Urgente</option>
+                            <option value="QUEJA">Queja</option>
+                            <option value="SUGERENCIA">Sugerencia</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterInquilino">Inquilino</label>
+                        <select id="filterInquilino">
+                            <option value="">Todos los inquilinos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filterFecha">Fecha</label>
+                        <input type="date" id="filterFecha">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reportes Table -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Reportes de Inquilinos</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchInput" placeholder="Buscar reporte..." class="search-input">
+                        <button class="btn-secondary" id="btnExportar">
+                                <i class="fas fa-download"></i> Exportar
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="reportesTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Inquilino</th>
+                                <th>Cuarto</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportesTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Historial Section -->
+            <section class="historial-section">
+                <div class="section-header">
+                    <h2>Historial del Reporte</h2>
+                    <button class="btn-primary" id="btnAgregarHistorial">
+                        <i class="fas fa-plus"></i> Agregar al Historial
+                    </button>
+                </div>
+                <div class="table-container">
+                    <table id="historialTable">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historialTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo/Editar Reporte -->
+    <div id="modalReporte" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Reporte</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="reporteForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="idInquilino">Inquilino *</label>
+                        <select id="idInquilino" name="idInquilino" required>
+                            <option value="">Cargando inquilinos...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="idCuarto">Cuarto</label>
+                        <select id="idCuarto" name="idCuarto">
+                            <option value="">Seleccionar cuarto...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombre">Nombre del Reporte *</label>
+                        <input type="text" id="nombre" name="nombre" required maxlength="100">
+                    </div>
+                    <div class="form-group">
+                        <label for="tipo">Tipo *</label>
+                        <select id="tipo" name="tipo" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="MANTENIMIENTO">Mantenimiento</option>
+                            <option value="URGENTE">Urgente</option>
+                            <option value="QUEJA">Queja</option>
+                            <option value="SUGERENCIA">Sugerencia</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="descripcion">Descripción *</label>
+                        <textarea id="descripcion" name="descripcion" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="fecha">Fecha *</label>
+                        <input type="date" id="fecha" name="fecha" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="estadoReporte">Estado</label>
+                        <select id="estadoReporte" name="estadoReporte">
+                            <option value="PENDIENTE">Pendiente</option>
+                            <option value="EN_PROCESO">En Proceso</option>
+                            <option value="RESUELTO">Resuelto</option>
+                            <option value="CANCELADO">Cancelado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Reporte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Historial -->
+    <div id="modalHistorial" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalHistorialTitle">Agregar al Historial</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="historialForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="historialIdReporte">Seleccionar Reporte *</label>
+                        <select id="historialIdReporte" name="idReporte" required>
+                            <option value="">Cargando reportes...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="nombreReporteHist">Nombre *</label>
+                        <input type="text" id="nombreReporteHist" name="nombreReporteHist" required maxlength="100" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label for="tipoReporteHist">Tipo *</label>
+                        <select id="tipoReporteHist" name="tipoReporteHist" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="ACTUALIZACION">Actualización</option>
+                            <option value="RESOLUCION">Resolución</option>
+                            <option value="CANCELACION">Cancelación</option>
+                            <option value="REVISION">Revisión</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="usuarioRegistro">Usuario *</label>
+                        <input type="text" id="usuarioRegistro" name="usuarioRegistro" required maxlength="50" value="admin">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="descripcionHist">Descripción *</label>
+                        <textarea id="descripcionHist" name="descripcionHist" rows="4" required placeholder="Describe la acción realizada en el historial..."></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarHistorial">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarHistorial">Guardar Historial</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>¿Estás seguro?</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmacionMensaje">Confirma la acción</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/bitacora.js"></script>
+</body>
+</html>
