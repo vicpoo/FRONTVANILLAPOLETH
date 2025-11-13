@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Inquilinos</title>
+    <link rel="stylesheet" href="../css/inquilinos.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Na-Ech</h2>
+            </div>
+            <nav class="sidebar-nav">
+               <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li class="active"><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                   <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestión de Inquilinos</h1>
+                <button class="btn-primary" id="btnNuevoInquilino">
+                    <i class="fas fa-plus"></i> Nuevo Inquilino
+                </button>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalInquilinos">0</h3>
+                        <p>Total Inquilinos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="inquilinosConUsuario">0</h3>
+                        <p>Con Usuario</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-times"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="inquilinosSinUsuario">0</h3>
+                        <p>Sin Usuario</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="usuariosActivos">0</h3>
+                        <p>Usuarios Activos</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filtros -->
+            <section class="filters-section">
+                <div class="filter-group">
+                    <label for="filterEstado">Filtrar por estado:</label>
+                    <select id="filterEstado" class="filter-select">
+                        <option value="all">Todos</option>
+                        <option value="with-user">Con Usuario</option>
+                        <option value="without-user">Sin Usuario</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterRol">Filtrar por rol:</label>
+                    <select id="filterRol" class="filter-select">
+                        <option value="all">Todos los roles</option>
+                        <!-- Los roles se cargarán dinámicamente -->
+                    </select>
+                </div>
+                <button class="btn-secondary" id="btnLimpiarFiltros">
+                    <i class="fas fa-times"></i> Limpiar Filtros
+                </button>
+            </section>
+
+            <!-- Inquilinos Table -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Lista de Inquilinos y Usuarios</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchInput" placeholder="Buscar inquilino o usuario..." class="search-input">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="inquilinosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Email</th>
+                                <th>INE</th>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inquilinosTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo Inquilino -->
+    <div id="modalInquilino" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo Inquilino</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="inquilinoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombreInquilino">Nombre Completo *</label>
+                        <input type="text" id="nombreInquilino" name="nombreInquilino" required maxlength="100" placeholder="Ingrese el nombre completo">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefonoInquilino">Teléfono</label>
+                        <input type="tel" id="telefonoInquilino" name="telefonoInquilino" maxlength="20" placeholder="Ingrese el teléfono">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email *</label>
+                        <input type="email" id="email" name="email" required maxlength="100" placeholder="Ingrese el email">
+                    </div>
+                    <div class="form-group">
+                        <label for="ine">INE *</label>
+                        <input type="text" id="ine" name="ine" required maxlength="50" placeholder="Ingrese el número de INE">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Inquilino</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Usuario -->
+    <div id="modalUsuario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalUsuarioTitle">Crear Usuario</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="usuarioForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="usuario">Usuario *</label>
+                        <input type="text" id="usuario" name="usuario" required maxlength="50" placeholder="Nombre de usuario para login">
+                        <small>Este será el usuario para acceder al sistema</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="contrasena">Contraseña *</label>
+                        <input type="password" id="contrasena" name="contrasena" minlength="8" placeholder="Contraseña para el usuario">
+                        <small>Mínimo 8 caracteres, incluir mayúsculas, minúsculas y números</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmarContrasena">Confirmar Contraseña *</label>
+                        <input type="password" id="confirmarContrasena" name="confirmarContrasena" minlength="8" placeholder="Confirmar contraseña">
+                    </div>
+                    <div class="form-group">
+                        <label for="rol">Rol *</label>
+                        <select id="rol" name="rol" required>
+                            <option value="">Seleccione un rol</option>
+                            <!-- Los roles se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarUsuario">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarUsuario">Guardar Usuario</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Información de Usuario -->
+    <div id="modalInfoUsuario" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-circle"></i> Información de Usuario</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="user-info">
+                    <div class="info-item">
+                        <label>Usuario:</label>
+                        <span id="infoUsuario">-</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Contraseña:</label>
+                        <span id="infoContrasena">-</span>
+                        <button type="button" class="btn-secondary btn-small" id="btnCopiarContrasena">
+                            <i class="fas fa-copy"></i> Copiar
+                        </button>
+                    </div>
+                    <div class="info-item">
+                        <label>Instrucciones:</label>
+                        <p class="instructions">Comparta esta información con el inquilino para que pueda acceder al sistema.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-primary" id="btnCerrarInfo">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>¿Estás seguro?</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmacionMensaje">Confirma la acción</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/inquilinos.js"></script>
+</body>
+</html>
