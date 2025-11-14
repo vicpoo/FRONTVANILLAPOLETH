@@ -1,0 +1,50 @@
+<!-- home.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Na-Ech</title>
+    <link rel="stylesheet" href="../css/home.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">BIENVENIDOS</h1>
+            <div class="logo-empresa">
+                <img src="../imagenes/logo-na-ech.jpg" alt="Na-Ech Logo">
+            </div>
+        </div>
+        
+        <div class="options">
+            <div class="option" id="propietario">
+                <div class="option-logo">
+                    <img src="../imagenes/sosteniendo-la-llave-con-la-mano.png" alt="Propietario">
+                </div>
+                <a href="/pages/login.html" class="option-button">Soy Propietario</a>
+            </div>
+            <div class="option" id="inquilino">
+                <div class="option-logo">
+                    <img src="../imagenes/alquilar.png" alt="Inquilino">
+                </div>
+                <a href="/pages/login.html" class="option-button">Soy Inquilino</a>
+            </div>
+            <div class="option" id="invitado">
+                <div class="option-logo">
+                    <img src="../imagenes/visita.png" alt="Invitado">
+                </div>
+                <a href="/pages/cuarto.html" class="option-button">Soy Invitado</a>
+            </div>
+        </div>
+
+        <!-- Botón para volver al index -->
+        <div class="back-container">
+            <button class="back-button" onclick="window.location.href='/index.html'">
+                Volver al Inicio
+            </button>
+        </div>
+    </div>
+    
+    <script src="../js/home.js"></script>
+</body>
+</html>

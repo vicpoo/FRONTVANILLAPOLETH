@@ -103,6 +103,25 @@ body {
     cursor: not-allowed;
 }
 
+/* Botón para ir a home */
+.home-btn {
+    width: 100%;
+    padding: 15px;
+    background-color: #333;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-top: 10px;
+}
+
+.home-btn:hover {
+    background-color: #555;
+}
+
 /* Estados de carga */
 .login-btn.loading {
     position: relative;
