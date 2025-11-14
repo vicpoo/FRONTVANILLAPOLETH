@@ -17,15 +17,18 @@
             <div class="header-content">
                 <div class="logo">
                     <i class="fas fa-file-contract"></i>
-                    <span>FRONTVANILLAPOLETH</span>
+                    <span data-key="site-title">FRONTVANILLAPOLETH</span>
                 </div>
                 <nav class="nav">
-                    <a href="#inicio">Inicio</a>
-                    <a href="#caracteristicas">Características</a>
-                    <a href="#solucion">Solución</a>
-                    <a href="#equipo">Equipo</a>
+                    <a href="#inicio" data-key="nav-home">Inicio</a>
+                    <a href="#caracteristicas" data-key="nav-features">Características</a>
+                    <a href="#solucion" data-key="nav-solution">Solución</a>
+                    <a href="#equipo" data-key="nav-team">Equipo</a>
+                    <button id="translate-btn" class="btn-translate">
+                        <i class="fas fa-language"></i> <span data-key="translate">Traducir al inglés</span>
+                    </button>
                     <a href="/pages/home.html" class="btn-login">
-                        <i class="fas fa-sign-in-alt"></i> Login
+                        <i class="fas fa-sign-in-alt"></i> <span data-key="nav-login">Login</span>
                     </a>
                 </nav>
             </div>
@@ -37,14 +40,14 @@
         <div class="container">
             <div class="hero-content">
                 <div class="hero-text">
-                    <h1>Sistema de Gestión de Contratos y Arriendos</h1>
-                    <p>Una solución integral para administrar contratos, pagos y comunicación entre arrendadores e inquilinos de manera eficiente y organizada.</p>
+                    <h1 data-key="hero-title">Sistema de Gestión de Contratos y Arriendos</h1>
+                    <p data-key="hero-description">Una solución integral para administrar contratos, pagos y comunicación entre arrendadores e inquilinos de manera eficiente y organizada.</p>
                     <div class="hero-actions">
                         <a href="/pages/home.html" class="btn-primary">
-                            <i class="fas fa-rocket"></i> Comenzar Ahora
+                            <i class="fas fa-rocket"></i> <span data-key="hero-start">Comenzar Ahora</span>
                         </a>
                         <a href="#caracteristicas" class="btn-secondary">
-                            <i class="fas fa-info-circle"></i> Más Información
+                            <i class="fas fa-info-circle"></i> <span data-key="hero-info">Más Información</span>
                         </a>
                     </div>
                 </div>
@@ -61,19 +64,19 @@
                             <div class="preview-sidebar">
                                 <div class="sidebar-item active">
                                     <i class="fas fa-home"></i>
-                                    <span>Dashboard</span>
+                                    <span data-key="sidebar-dashboard">Dashboard</span>
                                 </div>
                                 <div class="sidebar-item">
                                     <i class="fas fa-file-contract"></i>
-                                    <span>Contratos</span>
+                                    <span data-key="sidebar-contracts">Contratos</span>
                                 </div>
                                 <div class="sidebar-item">
                                     <i class="fas fa-users"></i>
-                                    <span>Inquilinos</span>
+                                    <span data-key="sidebar-tenants">Inquilinos</span>
                                 </div>
                                 <div class="sidebar-item">
                                     <i class="fas fa-chart-bar"></i>
-                                    <span>Reportes</span>
+                                    <span data-key="sidebar-reports">Reportes</span>
                                 </div>
                             </div>
                             <div class="preview-main">
@@ -84,7 +87,7 @@
                                         </div>
                                         <div class="stat-info">
                                             <h3>24</h3>
-                                            <p>Contratos Activos</p>
+                                            <p data-key="stat-contracts">Contratos Activos</p>
                                         </div>
                                     </div>
                                     <div class="stat-card">
@@ -93,7 +96,7 @@
                                         </div>
                                         <div class="stat-info">
                                             <h3>18</h3>
-                                            <p>Inquilinos</p>
+                                            <p data-key="stat-tenants">Inquilinos</p>
                                         </div>
                                     </div>
                                 </div>
@@ -101,20 +104,20 @@
                                     <table>
                                         <thead>
                                             <tr>
-                                                <th>Contrato</th>
-                                                <th>Estado</th>
-                                                <th>Vencimiento</th>
+                                                <th data-key="table-contract">Contrato</th>
+                                                <th data-key="table-status">Estado</th>
+                                                <th data-key="table-expiration">Vencimiento</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <tr>
                                                 <td>CT-001</td>
-                                                <td><span class="status-badge status-active">Activo</span></td>
+                                                <td><span class="status-badge status-active" data-key="status-active">Activo</span></td>
                                                 <td>15/12/2023</td>
                                             </tr>
                                             <tr>
                                                 <td>CT-002</td>
-                                                <td><span class="status-badge status-pending">Pendiente</span></td>
+                                                <td><span class="status-badge status-pending" data-key="status-pending">Pendiente</span></td>
                                                 <td>20/11/2023</td>
                                             </tr>
                                         </tbody>
@@ -132,51 +135,51 @@
     <section id="caracteristicas" class="features">
         <div class="container">
             <div class="section-header">
-                <h2>Características Principales</h2>
-                <p>Descubre cómo nuestro sistema puede transformar la gestión de tus contratos de arriendo</p>
+                <h2 data-key="features-title">Características Principales</h2>
+                <p data-key="features-subtitle">Descubre cómo nuestro sistema puede transformar la gestión de tus contratos de arriendo</p>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-file-contract"></i>
                     </div>
-                    <h3>Gestión de Contratos</h3>
-                    <p>Administra todos tus contratos de arriendo en un solo lugar, con recordatorios automáticos de vencimiento.</p>
+                    <h3 data-key="feature1-title">Gestión de Contratos</h3>
+                    <p data-key="feature1-desc">Administra todos tus contratos de arriendo en un solo lugar, con recordatorios automáticos de vencimiento.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-money-bill-wave"></i>
                     </div>
-                    <h3>Seguimiento de Pagos</h3>
-                    <p>Controla los pagos de renta y servicios, con estados claros y alertas de morosidad.</p>
+                    <h3 data-key="feature2-title">Seguimiento de Pagos</h3>
+                    <p data-key="feature2-desc">Controla los pagos de renta y servicios, con estados claros y alertas de morosidad.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-tools"></i>
                     </div>
-                    <h3>Reportes de Mantenimiento</h3>
-                    <p>Sistema integrado para reportar y dar seguimiento a problemas de mantenimiento en los inmuebles.</p>
+                    <h3 data-key="feature3-title">Reportes de Mantenimiento</h3>
+                    <p data-key="feature3-desc">Sistema integrado para reportar y dar seguimiento a problemas de mantenimiento en los inmuebles.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-bell"></i>
                     </div>
-                    <h3>Notificaciones Automáticas</h3>
-                    <p>Mantén informados a arrendadores e inquilinos con recordatorios y avisos importantes.</p>
+                    <h3 data-key="feature4-title">Notificaciones Automáticas</h3>
+                    <p data-key="feature4-desc">Mantén informados a arrendadores e inquilinos con recordatorios y avisos importantes.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-chart-line"></i>
                     </div>
-                    <h3>Reportes y Estadísticas</h3>
-                    <p>Visualiza el estado de tus propiedades y finanzas con reportes detallados y gráficos intuitivos.</p>
+                    <h3 data-key="feature5-title">Reportes y Estadísticas</h3>
+                    <p data-key="feature5-desc">Visualiza el estado de tus propiedades y finanzas con reportes detallados y gráficos intuitivos.</p>
                 </div>
                 <div class="feature-card">
                     <div class="feature-icon">
                         <i class="fas fa-mobile-alt"></i>
                     </div>
-                    <h3>Acceso Móvil</h3>
-                    <p>Gestiona tus contratos desde cualquier dispositivo, en cualquier momento y lugar.</p>
+                    <h3 data-key="feature6-title">Acceso Móvil</h3>
+                    <p data-key="feature6-desc">Gestiona tus contratos desde cualquier dispositivo, en cualquier momento y lugar.</p>
                 </div>
             </div>
         </div>
@@ -187,35 +190,35 @@
         <div class="container">
             <div class="solution-content">
                 <div class="solution-text">
-                    <h2>Solución Integral para la Problemática de Arriendos</h2>
-                    <p>Nuestro sistema aborda los principales problemas identificados en la gestión tradicional de arriendos:</p>
+                    <h2 data-key="solution-title">Solución Integral para la Problemática de Arriendos</h2>
+                    <p data-key="solution-subtitle">Nuestro sistema aborda los principales problemas identificados en la gestión tradicional de arriendos:</p>
                     
                     <div class="problem-solution">
                         <div class="problem-item">
-                            <h3><i class="fas fa-exclamation-circle"></i> Problema: Gestión Desorganizada</h3>
-                            <p>Falta de un sistema centralizado para administrar contratos, pagos y comunicación.</p>
+                            <h3><i class="fas fa-exclamation-circle"></i> <span data-key="problem1-title">Problema: Gestión Desorganizada</span></h3>
+                            <p data-key="problem1-desc">Falta de un sistema centralizado para administrar contratos, pagos y comunicación.</p>
                         </div>
                         <div class="solution-item">
-                            <h3><i class="fas fa-check-circle"></i> Solución: Plataforma Unificada</h3>
-                            <p>Toda la información de contratos, pagos y comunicación en un solo lugar accesible.</p>
+                            <h3><i class="fas fa-check-circle"></i> <span data-key="solution1-title">Solución: Plataforma Unificada</span></h3>
+                            <p data-key="solution1-desc">Toda la información de contratos, pagos y comunicación en un solo lugar accesible.</p>
                         </div>
                         
                         <div class="problem-item">
-                            <h3><i class="fas fa-exclamation-circle"></i> Problema: Comunicación Ineficiente</h3>
-                            <p>Dificultades para reportar problemas y mantener informadas a ambas partes.</p>
+                            <h3><i class="fas fa-exclamation-circle"></i> <span data-key="problem2-title">Problema: Comunicación Ineficiente</span></h3>
+                            <p data-key="problem2-desc">Dificultades para reportar problemas y mantener informadas a ambas partes.</p>
                         </div>
                         <div class="solution-item">
-                            <h3><i class="fas fa-check-circle"></i> Solución: Canal de Comunicación Integrado</h3>
-                            <p>Sistema de mensajería y notificaciones para mantener una comunicación fluida.</p>
+                            <h3><i class="fas fa-check-circle"></i> <span data-key="solution2-title">Solución: Canal de Comunicación Integrado</span></h3>
+                            <p data-key="solution2-desc">Sistema de mensajería y notificaciones para mantener una comunicación fluida.</p>
                         </div>
                         
                         <div class="problem-item">
-                            <h3><i class="fas fa-exclamation-circle"></i> Problema: Falta de Recordatorios</h3>
-                            <p>Olvido de fechas de pago, vencimiento de contratos y mantenimientos.</p>
+                            <h3><i class="fas fa-exclamation-circle"></i> <span data-key="problem3-title">Problema: Falta de Recordatorios</span></h3>
+                            <p data-key="problem3-desc">Olvido de fechas de pago, vencimiento de contratos y mantenimientos.</p>
                         </div>
                         <div class="solution-item">
-                            <h3><i class="fas fa-check-circle"></i> Solución: Recordatorios Automáticos</h3>
-                            <p>Alertas y notificaciones automáticas para fechas importantes y pagos pendientes.</p>
+                            <h3><i class="fas fa-check-circle"></i> <span data-key="solution3-title">Solución: Recordatorios Automáticos</span></h3>
+                            <p data-key="solution3-desc">Alertas y notificaciones automáticas para fechas importantes y pagos pendientes.</p>
                         </div>
                     </div>
                 </div>
@@ -223,15 +226,15 @@
                     <div class="solution-stats">
                         <div class="solution-stat">
                             <h3>+80%</h3>
-                            <p>Reducción en pagos atrasados</p>
+                            <p data-key="stat1-desc">Reducción en pagos atrasados</p>
                         </div>
                         <div class="solution-stat">
                             <h3>+60%</h3>
-                            <p>Mejora en comunicación</p>
+                            <p data-key="stat2-desc">Mejora en comunicación</p>
                         </div>
                         <div class="solution-stat">
                             <h3>+90%</h3>
-                            <p>Satisfacción de usuarios</p>
+                            <p data-key="stat3-desc">Satisfacción de usuarios</p>
                         </div>
                     </div>
                 </div>
@@ -243,29 +246,29 @@
     <section id="equipo" class="team">
         <div class="container">
             <div class="section-header">
-                <h2>Nuestro Equipo</h2>
-                <p>El equipo detrás del desarrollo de FRONTVANILLAPOLETH</p>
+                <h2 data-key="team-title">Nuestro Equipo</h2>
+                <p data-key="team-subtitle">El equipo detrás del desarrollo de FRONTVANILLAPOLETH</p>
             </div>
             <div class="team-grid">
                 <div class="team-member">
                     <div class="member-avatar">
                         <i class="fas fa-user"></i>
                     </div>
-                    <h3>Proyecto Integrador 3A</h3>
-                    <p>Equipo de Desarrollo</p>
+                    <h3 data-key="team-name">Proyecto Integrador 3A</h3>
+                    <p data-key="team-role">Equipo de Desarrollo</p>
                     <div class="member-skills">
-                        <span>Desarrollo Web</span>
-                        <span>UX/UI</span>
-                        <span>Base de Datos</span>
+                        <span data-key="skill1">Desarrollo Web</span>
+                        <span data-key="skill2">UX/UI</span>
+                        <span data-key="skill3">Base de Datos</span>
                     </div>
                 </div>
                 <div class="team-values">
-                    <h3>Nuestros Valores</h3>
+                    <h3 data-key="values-title">Nuestros Valores</h3>
                     <ul>
-                        <li><i class="fas fa-check"></i> Enfoque en la experiencia del usuario</li>
-                        <li><i class="fas fa-check"></i> Soluciones prácticas y eficientes</li>
-                        <li><i class="fas fa-check"></i> Comunicación clara y transparente</li>
-                        <li><i class="fas fa-check"></i> Mejora continua del producto</li>
+                        <li><i class="fas fa-check"></i> <span data-key="value1">Enfoque en la experiencia del usuario</span></li>
+                        <li><i class="fas fa-check"></i> <span data-key="value2">Soluciones prácticas y eficientes</span></li>
+                        <li><i class="fas fa-check"></i> <span data-key="value3">Comunicación clara y transparente</span></li>
+                        <li><i class="fas fa-check"></i> <span data-key="value4">Mejora continua del producto</span></li>
                     </ul>
                 </div>
             </div>
@@ -276,10 +279,10 @@
     <section class="cta">
         <div class="container">
             <div class="cta-content">
-                <h2>¿Listo para transformar la gestión de tus arriendos?</h2>
-                <p>Comienza hoy mismo con FRONTVANILLAPOLETH y descubre una nueva forma de administrar tus contratos.</p>
+                <h2 data-key="cta-title">¿Listo para transformar la gestión de tus arriendos?</h2>
+                <p data-key="cta-subtitle">Comienza hoy mismo con FRONTVANILLAPOLETH y descubre una nueva forma de administrar tus contratos.</p>
                 <a href="/pages/home.html" class="btn-primary">
-                    <i class="fas fa-rocket"></i> Comenzar Ahora
+                    <i class="fas fa-rocket"></i> <span data-key="cta-button">Comenzar Ahora</span>
                 </a>
             </div>
         </div>
@@ -291,20 +294,22 @@
             <div class="footer-content">
                 <div class="footer-logo">
                     <i class="fas fa-file-contract"></i>
-                    <span>FRONTVANILLAPOLETH</span>
+                    <span data-key="footer-title">FRONTVANILLAPOLETH</span>
                 </div>
                 <div class="footer-links">
-                    <a href="#inicio">Inicio</a>
-                    <a href="#caracteristicas">Características</a>
-                    <a href="#solucion">Solución</a>
-                    <a href="#equipo">Equipo</a>
+                    <a href="#inicio" data-key="footer-home">Inicio</a>
+                    <a href="#caracteristicas" data-key="footer-features">Características</a>
+                    <a href="#solucion" data-key="footer-solution">Solución</a>
+                    <a href="#equipo" data-key="footer-team">Equipo</a>
                 </div>
                 <div class="footer-copy">
-                    <p>&copy; 2023 FRONTVANILLAPOLETH. Todos los derechos reservados.</p>
-                    <p>Proyecto Integrador 3A - Sistema de gestión de contratos y arriendos</p>
+                    <p data-key="footer-copy1">&copy; 2023 FRONTVANILLAPOLETH. Todos los derechos reservados.</p>
+                    <p data-key="footer-copy2">Proyecto Integrador 3A - Sistema de gestión de contratos y arriendos</p>
                 </div>
             </div>
         </div>
     </footer>
+
+    <script src="/js/index.js"></script>
 </body>
 </html>

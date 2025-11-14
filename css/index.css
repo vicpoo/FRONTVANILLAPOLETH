@@ -682,3 +682,48 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* Botón de traducción */
+.btn-translate {
+    background: var(--light-gray);
+    color: var(--text-dark);
+    border: 2px solid var(--gray);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-family: inherit;
+}
+
+.btn-translate:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+/* Ajustes para el header con el nuevo botón */
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Responsive para el botón de traducción */
+@media (max-width: 768px) {
+    .btn-translate {
+        padding: 0.4rem 0.8rem;
+        font-size: 12px;
+    }
+    
+    .nav {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+}
