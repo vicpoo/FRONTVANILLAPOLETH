@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Mantenimiento</title>
+    <link rel="stylesheet" href="../css/mantenimiento.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                    <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li class="active"><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
+                    <li><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>
+                    <li><a href="notificaciones.html"><i class="fas fa-bell"></i> Notificaciones</a></li>
+                    <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestión de Mantenimiento</h1>
+                <div class="header-buttons">
+                    <button class="btn-primary" id="btnNuevoMantenimiento">
+                        <i class="fas fa-plus"></i> Nuevo Mantenimiento
+                    </button>
+                    <button class="btn-secondary" id="btnReportes">
+                        <i class="fas fa-chart-bar"></i> Reportes
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalMantenimientos">0</h3>
+                        <p>Total Mantenimientos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="mantenimientosPendientes">0</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-spinner"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="mantenimientosEnProceso">0</h3>
+                        <p>En Proceso</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="mantenimientosCompletados">0</h3>
+                        <p>Completados</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="costoTotal">$0</h3>
+                        <p>Costo Total</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filtros -->
+            <section class="filtros-container">
+                <div class="filtros-grid">
+                    <div class="filtro-group">
+                        <label for="filtroEstado">Estado</label>
+                        <select id="filtroEstado" class="search-input">
+                            <option value="">Todos los estados</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En Proceso">En Proceso</option>
+                            <option value="Completado">Completado</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="filtro-group">
+                        <label for="filtroPrioridad">Prioridad</label>
+                        <select id="filtroPrioridad" class="search-input">
+                            <option value="">Todas las prioridades</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                    </div>
+                    <div class="filtro-group">
+                        <label for="filtroFechaInicio">Fecha Inicio</label>
+                        <input type="date" id="filtroFechaInicio" class="search-input">
+                    </div>
+                    <div class="filtro-group">
+                        <label for="filtroFechaFin">Fecha Fin</label>
+                        <input type="date" id="filtroFechaFin" class="search-input">
+                    </div>
+                    <div class="filtro-actions">
+                        <button class="btn-secondary" id="btnAplicarFiltros">
+                            <i class="fas fa-filter"></i> Aplicar Filtros
+                        </button>
+                        <button class="btn-secondary" id="btnLimpiarFiltros">
+                            <i class="fas fa-times"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección de Mantenimientos -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Lista de Mantenimientos</h2>
+                    <div class="table-actions">
+                        <input type="text" id="searchMantenimientosInput" placeholder="Buscar mantenimiento..." class="search-input">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="mantenimientosTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cuarto</th>
+                                <th>Fecha Reporte</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Prioridad</th>
+                                <th>Fecha Atención</th>
+                                <th>Costo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mantenimientosTableBody">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Nuevo/Editar Mantenimiento -->
+    <div id="modalMantenimiento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalMantenimientoTitle">Nuevo Mantenimiento</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="mantenimientoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="cuartoMantenimiento">Cuarto *</label>
+                        <select id="cuartoMantenimiento" name="idCuarto" required>
+                            <option value="">Seleccionar cuarto...</option>
+                            <!-- Las opciones se llenarán dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaReporte">Fecha de Reporte *</label>
+                        <input type="date" id="fechaReporte" name="fechaReporte" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prioridadMantenimiento">Prioridad</label>
+                        <select id="prioridadMantenimiento" name="estadoMantenimiento">
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="Alta">Alta</option>
+                            <option value="Media">Media</option>
+                            <option value="Baja">Baja</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="descripcionProblema">Descripción del Problema *</label>
+                        <textarea id="descripcionProblema" name="descripcionProblema" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="fechaAtencion">Fecha de Atención</label>
+                        <input type="date" id="fechaAtencion" name="fechaAtencion">
+                    </div>
+                    <div class="form-group">
+                        <label for="costoMantenimiento">Costo de Mantenimiento</label>
+                        <input type="number" id="costoMantenimiento" name="costoMantenimiento" step="0.01" min="0">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarMantenimiento">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarMantenimiento">Guardar Mantenimiento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Atender Mantenimiento -->
+    <div id="modalAtenderMantenimiento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Atender Mantenimiento</h2>
+                <span class="close">&times;</span>
+            </div>
+            <form id="atenderMantenimientoForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="atenderFechaAtencion">Fecha de Atención *</label>
+                        <input type="date" id="atenderFechaAtencion" name="fechaAtencion" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="atenderCosto">Costo *</label>
+                        <input type="number" id="atenderCosto" name="costo" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="atenderEstado">Estado Final *</label>
+                        <select id="atenderEstado" name="estado" required>
+                            <option value="Completado">Completado</option>
+                            <option value="En Proceso">En Proceso</option>
+                            <option value="Cancelado">Cancelado</option>
+                        </select>
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="atenderObservaciones">Observaciones</label>
+                        <textarea id="atenderObservaciones" name="observaciones" rows="4"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" id="btnCancelarAtender">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarAtender">Guardar Atención</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Detalles Mantenimiento -->
+    <div id="modalDetallesMantenimiento" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalles del Mantenimiento</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="detalles-grid" style="display: grid; gap: 20px;">
+                    <div class="detalle-item">
+                        <strong>ID:</strong> <span id="detalleId"></span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Cuarto:</strong> <span id="detalleCuarto"></span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Fecha Reporte:</strong> <span id="detalleFechaReporte"></span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Descripción:</strong> <span id="detalleDescripcion"></span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Estado:</strong> <span id="detalleEstado"></span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Fecha Atención:</strong> <span id="detalleFechaAtencion"></span>
+                    </div>
+                    <div class="detalle-item">
+                        <strong>Costo:</strong> <span id="detalleCosto"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" id="btnCerrarDetalles">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmación -->
+    <div id="modalConfirmacion" class="modal">
+        <div class="modal-content confirm-modal">
+            <div class="modal-header">
+                <h2>¿Estás seguro?</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="confirmacionMensaje">Confirma la acción</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/mantenimiento.js"></script>
+</body>
+</html>

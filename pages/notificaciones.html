@@ -1,11 +1,10 @@
-<!-- contratos.html-->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Contratos</title>
-    <link rel="stylesheet" href="../css/contratos.css">
+    <title>Gestión de Notificaciones</title>
+    <link rel="stylesheet" href="../css/notificaciones.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -18,12 +17,12 @@
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-                    <li class="active"><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
                     <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
-                   <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
-                   <li><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
+                    <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
                     <li><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>
-                    <li><a href="notificaciones.html"><i class="fas fa-bell"></i> Notificaciones</a></li>
+                    <li class="active"><a href="notificaciones.html"><i class="fas fa-bell"></i> Notificaciones</a></li>
                     <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
                 </ul>
             </nav>
@@ -32,9 +31,9 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="content-header">
-                <h1>Gestión de Contratos</h1>
-                <button class="btn-primary" id="btnNuevoContrato">
-                    <i class="fas fa-plus"></i> Nuevo Contrato
+                <h1>Gestión de Notificaciones</h1>
+                <button class="btn-primary" id="btnNuevaNotificacion">
+                    <i class="fas fa-plus"></i> Nueva Notificación
                 </button>
             </header>
 
@@ -42,11 +41,11 @@
             <section class="dashboard-stats">
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-file-contract"></i>
+                        <i class="fas fa-bell"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="totalContratos">0</h3>
-                        <p>Total Contratos</p>
+                        <h3 id="totalNotificaciones">0</h3>
+                        <p>Total Notificaciones</p>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -54,8 +53,8 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="contratosActivos">0</h3>
-                        <p>Contratos Activos</p>
+                        <h3 id="notificacionesHoy">0</h3>
+                        <p>Para Hoy</p>
                     </div>
                 </div>
                 <div class="stat-card">
@@ -63,47 +62,46 @@
                         <i class="fas fa-clock"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="contratosPorVencer">0</h3>
-                        <p>Por Vencer</p>
+                        <h3 id="notificacionesFuturas">0</h3>
+                        <p>Futuras</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-times-circle"></i>
+                        <i class="fas fa-history"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="contratosExpirados">0</h3>
-                        <p>Expirados</p>
+                        <h3 id="notificacionesPasadas">0</h3>
+                        <p>Pasadas</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Contratos Table -->
+            <!-- Notificaciones Table -->
             <section class="table-section">
                 <div class="table-header">
-                    <h2>Lista de Contratos</h2>
+                    <h2>Lista de Notificaciones</h2>
                     <div class="table-actions">
-                        <input type="text" id="searchInput" placeholder="Buscar contrato..." class="search-input">
+                        <input type="text" id="searchInput" placeholder="Buscar notificación..." class="search-input">
                         <button class="btn-secondary" id="btnExportar">
                             <i class="fas fa-download"></i> Exportar
                         </button>
                     </div>
                 </div>
                 <div class="table-container">
-                    <table id="contratosTable">
+                    <table id="notificacionesTable">
                         <thead>
                             <tr>
                                 <th>ID</th>
                                 <th>Inquilino</th>
-                                <th>Cuarto</th>
-                                <th>Fecha Inicio</th>
-                                <th>Fecha Fin</th>
-                                <th>Monto</th>
+                                <th>Contrato</th>
+                                <th>Fecha Utilización</th>
+                                <th>Tipo</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="contratosTableBody">
+                        <tbody id="notificacionesTableBody">
                             <!-- Los datos se cargarán dinámicamente -->
                         </tbody>
                     </table>
@@ -112,57 +110,51 @@
         </main>
     </div>
 
-    <!-- Modal Nuevo Contrato -->
-    <div id="modalContrato" class="modal">
+    <!-- Modal Nueva Notificación -->
+    <div id="modalNotificacion" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Nuevo Contrato</h2>
+                <h2 id="modalTitle">Nueva Notificación</h2>
                 <span class="close">&times;</span>
             </div>
-            <form id="contratoForm">
+            <form id="notificacionForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="idInquilino">Inquilino *</label>
-                        <select id="idInquilino" name="idInquilino" required>
+                        <label for="idInquilino">Inquilino</label>
+                        <select id="idInquilino" name="idInquilino">
                             <option value="">Cargando inquilinos...</option>
                         </select>
+                        <small class="form-hint">Opcional - selecciona un inquilino específico</small>
                     </div>
                     <div class="form-group">
-                        <label for="idCuarto">Cuarto *</label>
-                        <select id="idCuarto" name="idCuarto" required>
-                            <option value="">Cargando cuartos...</option>
+                        <label for="idContrato">Contrato</label>
+                        <select id="idContrato" name="idContrato">
+                            <option value="">Cargando contratos...</option>
                         </select>
+                        <small class="form-hint">Opcional - selecciona un contrato específico</small>
                     </div>
                     <div class="form-group">
-                        <label for="fechaInicio">Fecha Inicio *</label>
-                        <input type="date" id="fechaInicio" name="fechaInicio" required>
+                        <label for="fechaUtilizacion">Fecha Utilización *</label>
+                        <input type="date" id="fechaUtilizacion" name="fechaUtilizacion" required>
                     </div>
                     <div class="form-group">
-                        <label for="fechaFinalizacion">Fecha Finalización</label>
-                        <input type="date" id="fechaFinalizacion" name="fechaFinalizacion">
-                    </div>
-                    <div class="form-group">
-                        <label for="fechaPagoEstablecida">Fecha Pago</label>
-                        <input type="date" id="fechaPagoEstablecida" name="fechaPagoEstablecida">
-                    </div>
-                    <div class="form-group">
-                        <label for="montoRentaAcordada">Monto Renta *</label>
-                        <input type="number" id="montoRentaAcordada" name="montoRentaAcordada" step="0.01" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="estadoContrato">Estado</label>
-                        <select id="estadoContrato" name="estadoContrato">
-                            <option value="ACTIVO">Activo</option>
-                            <option value="INACTIVO">Inactivo</option>
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="FINALIZADO">Finalizado</option>
+                        <label for="tipoNotificacion">Tipo de Notificación *</label>
+                        <select id="tipoNotificacion" name="tipoNotificacion" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="PAGO_PENDIENTE">Pago Pendiente</option>
+                            <option value="RENOVACION">Renovación de Contrato</option>
+                            <option value="MANTENIMIENTO">Mantenimiento</option>
+                            <option value="INSPECCION">Inspección</option>
+                            <option value="AVISO_GENERAL">Aviso General</option>
+                            <option value="RECORDATORIO">Recordatorio</option>
+                            <option value="URGENTE">Urgente</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Contrato</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Notificación</button>
                 </div>
             </form>
         </div>
@@ -185,6 +177,6 @@
         </div>
     </div>
 
-    <script src="../js/contratos.js"></script>
+    <script src="../js/notificaciones.js"></script>
 </body>
 </html>
