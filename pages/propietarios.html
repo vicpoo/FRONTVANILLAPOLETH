@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Notificaciones</title>
-    <link rel="stylesheet" href="../css/notificaciones.css">
+    <title>Gestión de Propietarios</title>
+    <link rel="stylesheet" href="../css/propietarios.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
@@ -12,18 +12,18 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
-                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+                <h2><i class="fas fa-home"></i> Na-Ech</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
                     <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                     <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
                     <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
-                    <li><a href="propietarios.html"><i class="fas fa-user-tie"></i> Propietarios</a></li>
+                    <li class="active"><a href="propietarios.html"><i class="fas fa-user-tie"></i> Propietarios</a></li>
                     <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
                     <li><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
                     <li><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>
-                    <li class="active"><a href="notificaciones.html"><i class="fas fa-bell"></i> Notificaciones</a></li>
+                    <li><a href="notificaciones.html"><i class="fas fa-bell"></i> Notificaciones</a></li>
                     <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
                 </ul>
             </nav>
@@ -32,9 +32,9 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="content-header">
-                <h1>Gestión de Notificaciones</h1>
-                <button class="btn-primary" id="btnNuevaNotificacion">
-                    <i class="fas fa-plus"></i> Nueva Notificación
+                <h1>Gestión de Propietarios</h1>
+                <button class="btn-primary" id="btnNuevoPropietario">
+                    <i class="fas fa-plus"></i> Nuevo Propietario
                 </button>
             </header>
 
@@ -42,67 +42,83 @@
             <section class="dashboard-stats">
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-bell"></i>
+                        <i class="fas fa-user-tie"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="totalNotificaciones">0</h3>
-                        <p>Total Notificaciones</p>
+                        <h3 id="totalPropietarios">0</h3>
+                        <p>Total Propietarios</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
+                        <i class="fas fa-envelope"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="notificacionesHoy">0</h3>
-                        <p>Para Hoy</p>
+                        <h3 id="propietariosConEmail">0</h3>
+                        <p>Con Email</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
+                        <i class="fas fa-envelope-open"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="notificacionesFuturas">0</h3>
-                        <p>Futuras</p>
+                        <h3 id="propietariosSinEmail">0</h3>
+                        <p>Sin Email</p>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-history"></i>
+                        <i class="fas fa-sync-alt"></i>
                     </div>
                     <div class="stat-info">
-                        <h3 id="notificacionesPasadas">0</h3>
-                        <p>Pasadas</p>
+                        <h3 id="propietariosActivos">0</h3>
+                        <p>Activos</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Notificaciones Table -->
+            <!-- Filtros -->
+            <section class="filters-section">
+                <div class="filter-group">
+                    <label for="filterEstado">Filtrar por estado:</label>
+                    <select id="filterEstado" class="filter-select">
+                        <option value="all">Todos</option>
+                        <option value="with-email">Con Email</option>
+                        <option value="without-email">Sin Email</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="searchInput">Buscar:</label>
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre o email..." class="search-input">
+                </div>
+                <button class="btn-secondary" id="btnLimpiarFiltros">
+                    <i class="fas fa-times"></i> Limpiar Filtros
+                </button>
+            </section>
+
+            <!-- Propietarios Table -->
             <section class="table-section">
                 <div class="table-header">
-                    <h2>Lista de Notificaciones</h2>
+                    <h2>Lista de Propietarios</h2>
                     <div class="table-actions">
-                        <input type="text" id="searchInput" placeholder="Buscar notificación..." class="search-input">
                         <button class="btn-secondary" id="btnExportar">
-                            <i class="fas fa-download"></i> Exportar
+                            <i class="fas fa-file-export"></i> Exportar
                         </button>
                     </div>
                 </div>
                 <div class="table-container">
-                    <table id="notificacionesTable">
+                    <table id="propietariosTable">
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Inquilino</th>
-                                <th>Contrato</th>
-                                <th>Fecha Utilización</th>
-                                <th>Tipo</th>
+                                <th>Nombre</th>
+                                <th>Email</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="notificacionesTableBody">
+                        <tbody id="propietariosTableBody">
                             <!-- Los datos se cargarán dinámicamente -->
                         </tbody>
                     </table>
@@ -111,51 +127,30 @@
         </main>
     </div>
 
-    <!-- Modal Nueva Notificación -->
-    <div id="modalNotificacion" class="modal">
+    <!-- Modal Propietario -->
+    <div id="modalPropietario" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="modalTitle">Nueva Notificación</h2>
+                <h2 id="modalTitle">Nuevo Propietario</h2>
                 <span class="close">&times;</span>
             </div>
-            <form id="notificacionForm">
+            <form id="propietarioForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="idInquilino">Inquilino</label>
-                        <select id="idInquilino" name="idInquilino">
-                            <option value="">Cargando inquilinos...</option>
-                        </select>
-                        <small class="form-hint">Opcional - selecciona un inquilino específico</small>
+                        <label for="nombrePropietario">Nombre Completo *</label>
+                        <input type="text" id="nombrePropietario" name="nombrePropietario" required maxlength="100" placeholder="Ingrese el nombre completo">
+                        <small id="nombreError" class="error-message"></small>
                     </div>
                     <div class="form-group">
-                        <label for="idContrato">Contrato</label>
-                        <select id="idContrato" name="idContrato">
-                            <option value="">Cargando contratos...</option>
-                        </select>
-                        <small class="form-hint">Opcional - selecciona un contrato específico</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="fechaUtilizacion">Fecha Utilización *</label>
-                        <input type="date" id="fechaUtilizacion" name="fechaUtilizacion" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="tipoNotificacion">Tipo de Notificación *</label>
-                        <select id="tipoNotificacion" name="tipoNotificacion" required>
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="PAGO_PENDIENTE">Pago Pendiente</option>
-                            <option value="RENOVACION">Renovación de Contrato</option>
-                            <option value="MANTENIMIENTO">Mantenimiento</option>
-                            <option value="INSPECCION">Inspección</option>
-                            <option value="AVISO_GENERAL">Aviso General</option>
-                            <option value="RECORDATORIO">Recordatorio</option>
-                            <option value="URGENTE">Urgente</option>
-                        </select>
+                        <label for="gmail">Email</label>
+                        <input type="email" id="gmail" name="gmail" maxlength="100" placeholder="Ingrese el email">
+                        <small id="emailError" class="error-message"></small>
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Notificación</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Propietario</button>
                 </div>
             </form>
         </div>
@@ -178,6 +173,6 @@
         </div>
     </div>
 
-    <script src="../js/notificaciones.js"></script>
+    <script src="../js/propietarios.js"></script>
 </body>
 </html>
