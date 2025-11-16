@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Alquiler</title>
+    <link rel="stylesheet" href="../css/dashboard.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fas fa-home"></i> Sistema de Alquiler</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
+                    <li><a href="propietarios.html"><i class="fas fa-user-tie"></i> Propietarios</a></li>
+                    <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
+                    <li><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
+                    <li><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>
+                    <li><a href="notificaciones.html"><i class="fas fa-bell"></i> Notificaciones</a></li>
+                    <li><a href="login.html"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Dashboard Principal</h1>
+            </header>
+
+            <!-- Dashboard Stats -->
+            <section class="dashboard-stats">
+                <div class="stat-card">
+                    <div class="stat-icon total-contratos">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalContratos">0</h3>
+                        <p>Total Contratos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon inquilinos-activos">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalInquilinos">0</h3>
+                        <p>Inquilinos Activos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon reportes-pendientes">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="reportesPendientes">0</h3>
+                        <p>Reportes Pendientes</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon cuartos-disponibles">
+                        <i class="fas fa-door-closed"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="cuartosDisponibles">0</h3>
+                        <p>Cuartos Disponibles</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section class="charts-section">
+                <!-- Gráfica de Tipos de Reportes -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Tipos de Reportes</h3>
+                        <p>Distribución por categoría</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="tiposReportesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfica de Estado de Contratos -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Estado de Contratos</h3>
+                        <p>Resumen actual</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="estadoContratosChart"></canvas>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Cargando datos del dashboard...</p>
+        </div>
+    </div>
+
+    <script src="../js/dashboard.js"></script>
+</body>
+</html>
