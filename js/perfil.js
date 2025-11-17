@@ -7,8 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Elementos del DOM
     const elements = {
         // Botones principales
-        editProfileBtn: document.getElementById('editProfileBtn'),
-        changePasswordBtn: document.getElementById('changePasswordBtn'),
         sessionInfoBtn: document.getElementById('sessionInfoBtn'),
         logoutBtn: document.getElementById('logoutBtn'),
         
@@ -37,10 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Información específica
         specificInfoContent: document.getElementById('specificInfoContent'),
         
-        // Modales
-        passwordModal: document.getElementById('passwordModal'),
+        // Modal de sesión
         sessionModal: document.getElementById('sessionModal'),
-        changePasswordForm: document.getElementById('changePasswordForm'),
         
         // Información de sesión
         sessionUsername: document.getElementById('sessionUsername'),
@@ -347,27 +343,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function setupEventListeners() {
         // Botones de acción
-        elements.editProfileBtn.addEventListener('click', handleEditProfile);
-        elements.changePasswordBtn.addEventListener('click', showPasswordModal);
         elements.sessionInfoBtn.addEventListener('click', showSessionInfo);
         elements.logoutBtn.addEventListener('click', handleLogout);
         
-        // Modales
+        // Modal
         setupModalEvents();
-        
-        // Formulario de cambio de contraseña
-        elements.changePasswordForm.addEventListener('submit', handlePasswordChange);
     }
 
     function setupModalEvents() {
-        // Cerrar modales al hacer click en la X
+        // Cerrar modal al hacer click en la X
         document.querySelectorAll('.close').forEach(closeBtn => {
             closeBtn.addEventListener('click', function() {
                 this.closest('.modal').style.display = 'none';
             });
         });
 
-        // Cerrar modales al hacer click fuera
+        // Cerrar modal al hacer click fuera
         document.querySelectorAll('.modal').forEach(modal => {
             modal.addEventListener('click', function(e) {
                 if (e.target === this) {
@@ -375,17 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
-
-        // Botón cancelar en formulario de contraseña
-        document.querySelector('.cancel-btn').addEventListener('click', function() {
-            elements.passwordModal.style.display = 'none';
-            elements.changePasswordForm.reset();
-        });
-    }
-
-    function handleEditProfile() {
-        alert('Funcionalidad de edición de perfil en desarrollo');
-        // Aquí puedes implementar la lógica para editar el perfil
     }
 
     function handleLogout() {
@@ -394,10 +374,6 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('userData');
             redirectToLogin();
         }
-    }
-
-    function showPasswordModal() {
-        elements.passwordModal.style.display = 'block';
     }
 
     function showSessionInfo() {
@@ -411,64 +387,6 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.sessionExpires.textContent = expiration.toLocaleString();
         }
         elements.sessionModal.style.display = 'block';
-    }
-
-    async function handlePasswordChange(e) {
-        e.preventDefault();
-        
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        // Validaciones
-        if (newPassword !== confirmPassword) {
-            showNotification('Las contraseñas nuevas no coinciden', 'error');
-            return;
-        }
-
-        if (!isPasswordStrong(newPassword)) {
-            showNotification('La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números', 'error');
-            return;
-        }
-
-        try {
-            // Mostrar estado de carga
-            const submitBtn = elements.changePasswordForm.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<div class="spinner"></div> Cambiando...';
-            submitBtn.disabled = true;
-
-            // Llamada a la API para cambiar contraseña
-            const response = await fetch(`${API_BASE_URL}/logins/${userData.idLogin}/contrasena`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contrasenaActual: currentPassword,
-                    nuevaContrasena: newPassword
-                })
-            });
-
-            if (response.ok) {
-                showNotification('Contraseña cambiada exitosamente', 'success');
-                elements.passwordModal.style.display = 'none';
-                elements.changePasswordForm.reset();
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Error al cambiar la contraseña');
-            }
-
-        } catch (error) {
-            console.error('Error cambiando contraseña:', error);
-            showNotification(error.message || 'Error al cambiar la contraseña', 'error');
-        } finally {
-            // Restaurar estado del botón
-            const submitBtn = elements.changePasswordForm.querySelector('button[type="submit"]');
-            submitBtn.innerHTML = 'Cambiar Contraseña';
-            submitBtn.disabled = false;
-        }
     }
 
     // Utilidades
@@ -514,11 +432,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 roleBadge.style.background = 'var(--primary-light)';
                 roleBadge.style.color = 'var(--primary-color)';
         }
-    }
-
-    function isPasswordStrong(password) {
-        const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-        return strongRegex.test(password);
     }
 
     function setLoadingState(loading) {

@@ -26,7 +26,6 @@ class BitacoraManager {
         // Botones principales
         document.getElementById('btnNuevoReporte').addEventListener('click', () => this.showModalReporte());
         document.getElementById('btnAgregarHistorial').addEventListener('click', () => this.showModalHistorial());
-        document.getElementById('btnExportar').addEventListener('click', () => this.exportarReportes());
         
         // Modal events
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -213,7 +212,7 @@ class BitacoraManager {
         if (reportes.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" style="text-align: center; padding: 40px;">
+                    <td colspan="9" style="text-align: center; padding: 40px;">
                         <i class="fas fa-clipboard-list" style="font-size: 48px; color: var(--gray); margin-bottom: 15px;"></i>
                         <p>No se encontraron reportes</p>
                     </td>
@@ -694,10 +693,6 @@ class BitacoraManager {
         } finally {
             this.showLoading(false, 'btnConfirmarAccion');
         }
-    }
-
-    exportarReportes() {
-        this.showSuccess('Exportación de reportes iniciada...');
     }
 
     hideModals() {

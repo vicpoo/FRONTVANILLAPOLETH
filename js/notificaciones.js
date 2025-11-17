@@ -19,7 +19,6 @@ class NotificacionesManager {
     bindEvents() {
         // Botones principales
         document.getElementById('btnNuevaNotificacion').addEventListener('click', () => this.showModal());
-        document.getElementById('btnExportar').addEventListener('click', () => this.exportarNotificaciones());
         
         // Modal events
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -443,12 +442,6 @@ class NotificacionesManager {
         } finally {
             this.showLoading(false, 'btnConfirmarAccion');
         }
-    }
-
-    exportarNotificaciones() {
-        // Simulación de exportación
-        this.showSuccess('Exportación iniciada...');
-        // En una implementación real, aquí se generaría el PDF o Excel
     }
 
     hideModals() {

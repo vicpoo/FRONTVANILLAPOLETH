@@ -28,9 +28,6 @@
         <main class="main-content">
             <header class="content-header">
                 <h1>Mi Perfil</h1>
-                <button class="btn-primary" id="editProfileBtn">
-                    <i class="fas fa-edit"></i> Editar Perfil
-                </button>
             </header>
 
             <!-- Profile Header -->
@@ -135,9 +132,6 @@
                         </div>
                         <div class="card-body">
                             <div class="security-actions">
-                                <button id="changePasswordBtn" class="btn-secondary security-btn">
-                                    <i class="fas fa-lock"></i> Cambiar Contraseña
-                                </button>
                                 <button id="sessionInfoBtn" class="btn-secondary security-btn">
                                     <i class="fas fa-info-circle"></i> Información de Sesión
                                 </button>
@@ -150,37 +144,6 @@
                 </div>
             </section>
         </main>
-    </div>
-
-    <!-- Modal para Cambiar Contraseña -->
-    <div id="passwordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-lock"></i> Cambiar Contraseña</h2>
-                <span class="close">&times;</span>
-            </div>
-            <form id="changePasswordForm">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="currentPassword">Contraseña Actual *</label>
-                        <input type="password" id="currentPassword" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="newPassword">Nueva Contraseña *</label>
-                        <input type="password" id="newPassword" required>
-                        <small>La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirmPassword">Confirmar Nueva Contraseña *</label>
-                        <input type="password" id="confirmPassword" required>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary cancel-btn">Cancelar</button>
-                    <button type="submit" class="btn-primary">Cambiar Contraseña</button>
-                </div>
-            </form>
-        </div>
     </div>
 
     <!-- Modal de Información de Sesión -->

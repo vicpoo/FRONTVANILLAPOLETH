@@ -20,7 +20,6 @@ class ContratosManager {
     bindEvents() {
         // Botones principales
         document.getElementById('btnNuevoContrato').addEventListener('click', () => this.showModal());
-        document.getElementById('btnExportar').addEventListener('click', () => this.exportarContratos());
         
         // Modal events
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -367,12 +366,6 @@ class ContratosManager {
         } finally {
             this.showLoading(false, 'btnConfirmarAccion');
         }
-    }
-
-    exportarContratos() {
-        // Simulación de exportación
-        this.showSuccess('Exportación iniciada...');
-        // En una implementación real, aquí se generaría el PDF o Excel
     }
 
     hideModals() {

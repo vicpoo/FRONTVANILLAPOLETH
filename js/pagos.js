@@ -17,7 +17,6 @@ class PagosManager {
     bindEvents() {
         // Botones principales
         document.getElementById('btnNuevoPago').addEventListener('click', () => this.showModal());
-        document.getElementById('btnExportar').addEventListener('click', () => this.exportarPagos());
         
         // Modal events
         document.querySelectorAll('.close').forEach(closeBtn => {
@@ -123,9 +122,6 @@ class PagosManager {
                     </span>
                 </td>
                 <td class="table-actions-cell">
-                    <button class="btn-action btn-edit" onclick="pagosManager.editarPago(${pago.idPago})">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
                     <button class="btn-action btn-delete" onclick="pagosManager.eliminarPago(${pago.idPago})">
                         <i class="fas fa-trash"></i> Eliminar
                     </button>
@@ -175,31 +171,16 @@ class PagosManager {
         this.renderPagos(pagosFiltrados);
     }
 
-    showModal(pago = null) {
-        this.currentPago = pago;
+    showModal() {
         const modal = document.getElementById('modalPago');
-        const title = document.getElementById('modalTitle');
         const form = document.getElementById('pagoForm');
 
-        if (pago) {
-            title.textContent = 'Editar Pago';
-            this.populateForm(pago);
-        } else {
-            title.textContent = 'Nuevo Pago';
-            form.reset();
-            // Establecer fecha por defecto como hoy
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fechaPago').value = hoy;
-        }
+        form.reset();
+        // Establecer fecha por defecto como hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        document.getElementById('fechaPago').value = hoy;
 
         modal.style.display = 'block';
-    }
-
-    populateForm(pago) {
-        document.getElementById('idContrato').value = pago.idContrato;
-        document.getElementById('fechaPago').value = pago.fechaPago;
-        document.getElementById('concepto').value = pago.concepto || '';
-        document.getElementById('montoPagado').value = pago.montoPagado || '';
     }
 
     async guardarPago(e) {
@@ -219,26 +200,14 @@ class PagosManager {
 
             console.log('Enviando datos:', pagoData); // Para debug
 
-            let response;
-            if (this.currentPago) {
-                // Actualizar pago existente
-                response = await fetch(`${this.API_BASE}/pagos/${this.currentPago.idPago}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(pagoData)
-                });
-            } else {
-                // Crear nuevo pago
-                response = await fetch(`${this.API_BASE}/pagos`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(pagoData)
-                });
-            }
+            // Crear nuevo pago
+            const response = await fetch(`${this.API_BASE}/pagos`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(pagoData)
+            });
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -255,7 +224,7 @@ class PagosManager {
             }
 
             const savedPago = await response.json();
-            this.showSuccess(`Pago ${this.currentPago ? 'actualizado' : 'registrado'} correctamente`);
+            this.showSuccess('Pago registrado correctamente');
             this.hideModals();
             this.loadPagos();
 
@@ -264,13 +233,6 @@ class PagosManager {
             this.showError(error.message);
         } finally {
             this.showLoading(false, 'btnGuardar');
-        }
-    }
-
-    editarPago(id) {
-        const pago = this.pagos.find(p => p.idPago === id);
-        if (pago) {
-            this.showModal(pago);
         }
     }
 
@@ -317,12 +279,6 @@ class PagosManager {
         }
     }
 
-    exportarPagos() {
-        // Simulación de exportación
-        this.showSuccess('Exportación iniciada...');
-        // En una implementación real, aquí se generaría el PDF o Excel
-    }
-
     hideModals() {
         document.querySelectorAll('.modal').forEach(modal => {
             modal.style.display = 'none';
@@ -347,7 +303,7 @@ class PagosManager {
                 button.disabled = false;
                 // Restaurar texto original según el botón
                 if (buttonId === 'btnGuardar') {
-                    button.textContent = this.currentPago ? 'Actualizar Pago' : 'Registrar Pago';
+                    button.textContent = 'Registrar Pago';
                 } else if (buttonId === 'btnConfirmarAccion') {
                     button.textContent = 'Confirmar';
                 }
