@@ -1,3 +1,4 @@
+//cuartos.js
 class CuartosManager {
     constructor() {
         this.cuartos = [];
@@ -58,9 +59,7 @@ class CuartosManager {
         const statusFilter = document.getElementById('filter-status').value;
 
         const cuartosFiltrados = this.cuartos.filter(cuarto => {
-            const matchesSearch = cuarto.nombreCuarto.toLowerCase().includes(searchTerm) ||
-                                cuarto.descripcionCuarto?.toLowerCase().includes(searchTerm);
-            
+            const matchesSearch = this.cuartoCumpleBusqueda(cuarto, searchTerm);
             const matchesStatus = !statusFilter || cuarto.estadoCuarto === statusFilter || 
                                 (!cuarto.estadoCuarto && statusFilter === 'Disponible');
 
@@ -68,6 +67,29 @@ class CuartosManager {
         });
 
         this.renderizarCuartos(cuartosFiltrados);
+    }
+
+    cuartoCumpleBusqueda(cuarto, searchTerm) {
+        if (!searchTerm) return true;
+
+        // Buscar en propiedades básicas del cuarto
+        const propiedadesCuarto = [
+            cuarto.nombreCuarto,
+            cuarto.descripcionCuarto,
+            cuarto.propietario?.nombre,
+            cuarto.propietario?.email
+        ].some(prop => prop && prop.toLowerCase().includes(searchTerm));
+
+        if (propiedadesCuarto) return true;
+
+        // Buscar en muebles del cuarto
+        const mueblesDelCuarto = this.obtenerMueblesDelCuarto(cuarto.idCuarto);
+        const tieneMuebleBuscado = mueblesDelCuarto.some(cuartoMueble => {
+            const mueble = this.muebles.find(m => m.idCatalogoMueble === cuartoMueble.idCatalogoMueble);
+            return mueble && mueble.nombreMueble.toLowerCase().includes(searchTerm);
+        });
+
+        return tieneMuebleBuscado;
     }
 
     renderizarCuartos(cuartos = this.cuartos) {
