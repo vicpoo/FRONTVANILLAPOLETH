@@ -1,4 +1,4 @@
-//inquilinos.html
+//inquilinos.js
 document.addEventListener('DOMContentLoaded', function() {
     const API_BASE_URL = 'http://localhost:8000/api';
     let authToken = null;
@@ -711,6 +711,19 @@ document.addEventListener('DOMContentLoaded', function() {
             showError('Todos los campos marcados con * son obligatorios');
             return;
         }
+
+            if (!formData.telefonoInquilino) {
+        showError('El número de teléfono es obligatorio');
+        elements.telefonoInquilino.focus();
+        return;
+    }
+
+        const telefonoRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+    if (!telefonoRegex.test(formData.telefonoInquilino)) {
+        showError('Por favor ingrese un número de teléfono válido (mínimo 10 dígitos)');
+        elements.telefonoInquilino.focus();
+        return;
+    }
 
         try {
             setLoadingState(true);
