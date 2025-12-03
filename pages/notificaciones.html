@@ -6,6 +6,65 @@
     <title>Gestión de Notificaciones</title>
     <link rel="stylesheet" href="../css/notificaciones.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Estilos para las notificaciones */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #f44336;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .notification.success {
+            background: #4CAF50;
+        }
+        
+        .notification.error {
+            background: #f44336;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -50,30 +109,62 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">
-                        <i class="fas fa-check-circle"></i>
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="notificacionesLeidas">0</h3>
+                        <p>Leídas</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-eye-slash"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="notificacionesNoLeidas">0</h3>
+                        <p>No Leídas</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-day"></i>
                     </div>
                     <div class="stat-info">
                         <h3 id="notificacionesHoy">0</h3>
                         <p>Para Hoy</p>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-clock"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="notificacionesFuturas">0</h3>
-                        <p>Futuras</p>
-                    </div>
+            </section>
+
+            <!-- Filtros -->
+            <section class="filters-section">
+                <div class="filter-group">
+                    <label for="filterEstado">Filtrar por estado:</label>
+                    <select id="filterEstado" class="filter-select">
+                        <option value="">Todos los estados</option>
+                        <option value="no_leido">No Leídas</option>
+                        <option value="leido">Leídas</option>
+                    </select>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon">
-                        <i class="fas fa-history"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3 id="notificacionesPasadas">0</h3>
-                        <p>Pasadas</p>
-                    </div>
+                <div class="filter-group">
+                    <label for="filterTipo">Filtrar por tipo:</label>
+                    <select id="filterTipo" class="filter-select">
+                        <option value="">Todos los tipos</option>
+                        <option value="PAGO_PENDIENTE">Pago Pendiente</option>
+                        <option value="RENOVACION">Renovación</option>
+                        <option value="MANTENIMIENTO">Mantenimiento</option>
+                        <option value="INSPECCION">Inspección</option>
+                        <option value="AVISO_GENERAL">Aviso General</option>
+                        <option value="RECORDATORIO">Recordatorio</option>
+                        <option value="URGENTE">Urgente</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterInquilino">Filtrar por inquilino:</label>
+                    <select id="filterInquilino" class="filter-select">
+                        <option value="">Todos los inquilinos</option>
+                        <!-- Se cargará dinámicamente -->
+                    </select>
                 </div>
             </section>
 
@@ -83,6 +174,9 @@
                     <h2>Lista de Notificaciones</h2>
                     <div class="table-actions">
                         <input type="text" id="searchInput" placeholder="Buscar notificación..." class="search-input">
+                        <button class="btn-refresh" id="btnRefresh">
+                            <i class="fas fa-sync-alt"></i> Actualizar
+                        </button>
                     </div>
                 </div>
                 <div class="table-container">
@@ -95,11 +189,18 @@
                                 <th>Fecha Utilización</th>
                                 <th>Tipo</th>
                                 <th>Estado</th>
+                                <th>Detalles</th>
+                                <th>Creada</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="notificacionesTableBody">
-                            <!-- Los datos se cargarán dinámicamente -->
+                            <tr>
+                                <td colspan="9" class="empty-state">
+                                    <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: var(--gray); margin-bottom: 15px;"></i>
+                                    <p>Cargando notificaciones...</p>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -117,22 +218,25 @@
             <form id="notificacionForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="idInquilino">Inquilino</label>
-                        <select id="idInquilino" name="idInquilino">
-                            <option value="">Cargando inquilinos...</option>
+                        <label for="idInquilino">Inquilino * <small style="color: #666;">(Solo usuarios con rol Inquilino)</small></label>
+                        <select id="idInquilino" name="idInquilino" required>
+                            <option value="">Seleccionar inquilino...</option>
+                            <!-- Se cargarán dinámicamente -->
                         </select>
-                        <small class="form-hint">Opcional - selecciona un inquilino específico</small>
+                        <small class="form-hint">Selecciona un inquilino registrado en el sistema</small>
                     </div>
                     <div class="form-group">
-                        <label for="idContrato">Contrato</label>
-                        <select id="idContrato" name="idContrato">
-                            <option value="">Cargando contratos...</option>
+                        <label for="idContrato">Contrato *</label>
+                        <select id="idContrato" name="idContrato" required>
+                            <option value="">Seleccionar contrato...</option>
+                            <!-- Se cargarán dinámicamente -->
                         </select>
-                        <small class="form-hint">Opcional - selecciona un contrato específico</small>
+                        <small class="form-hint">Contrato asociado a esta notificación</small>
                     </div>
                     <div class="form-group">
                         <label for="fechaUtilizacion">Fecha Utilización *</label>
                         <input type="date" id="fechaUtilizacion" name="fechaUtilizacion" required>
+                        <small class="form-hint">Fecha para la que aplica esta notificación</small>
                     </div>
                     <div class="form-group">
                         <label for="tipoNotificacion">Tipo de Notificación *</label>
@@ -146,6 +250,15 @@
                             <option value="RECORDATORIO">Recordatorio</option>
                             <option value="URGENTE">Urgente</option>
                         </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="detalles">Detalles</label>
+                    <textarea id="detalles" name="detalles" rows="4" maxlength="1000"
+                              placeholder="Descripción de la notificación... (máx. 1000 caracteres)"></textarea>
+                    <div class="char-count">
+                        <span id="charCount">0</span>/1000 caracteres
                     </div>
                 </div>
 
