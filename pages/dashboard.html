@@ -7,6 +7,51 @@
     <link rel="stylesheet" href="../css/dashboard.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Estilos para las notificaciones */
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #f44336;
+            color: white;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+        }
+        
+        .notification.success {
+            background: #4CAF50;
+        }
+        
+        .notification.error {
+            background: #f44336;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -33,6 +78,11 @@
         <main class="main-content">
             <header class="content-header">
                 <h1>Dashboard Principal</h1>
+                <div class="header-actions">
+                    <button id="refreshBtn" class="btn-refresh">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                </div>
             </header>
 
             <!-- Dashboard Stats -->
@@ -82,6 +132,15 @@
                     <div class="chart-header">
                         <h3>Tipos de Reportes</h3>
                         <p>Distribución por categoría</p>
+                        <div class="chart-filter">
+                            <select id="tipoReporteFilter">
+                                <option value="all">Todos los tipos</option>
+                                <option value="Mantenimiento">Mantenimiento</option>
+                                <option value="Urgente">Urgente</option>
+                                <option value="Queja">Queja</option>
+                                <option value="Sugerencia">Sugerencia</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="chart-container">
                         <canvas id="tiposReportesChart"></canvas>
@@ -97,10 +156,9 @@
                     <div class="chart-container">
                         <canvas id="estadoContratosChart"></canvas>
                     </div>
+                    <div class="chart-legend" id="estadoContratosLegend"></div>
                 </div>
             </section>
-        </main>
-    </div>
 
     <!-- Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">

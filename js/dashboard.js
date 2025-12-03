@@ -6,14 +6,28 @@ class DashboardManager {
             estadisticas: {},
             contratos: [],
             reportes: [],
-            cuartos: []
+            cuartos: [],
+            tiposReportes: ['Mantenimiento', 'Urgente', 'Queja', 'Sugerencia', 'Otro']
         };
         this.init();
     }
 
     init() {
+        this.setupEventListeners();
         this.loadDashboardData();
         this.initializeCharts();
+    }
+
+    setupEventListeners() {
+        // Botón de actualizar
+        document.getElementById('refreshBtn')?.addEventListener('click', () => {
+            this.loadDashboardData();
+        });
+
+        // Filtro de tipos de reportes
+        document.getElementById('tipoReporteFilter')?.addEventListener('change', (e) => {
+            this.filterReportsByType(e.target.value);
+        });
     }
 
     async loadDashboardData() {
@@ -25,41 +39,87 @@ class DashboardManager {
                 contratosResponse,
                 reportesResponse,
                 estadisticasResponse,
-                cuartosResponse
+                cuartosResponse,
+                reportesRecientesResponse
             ] = await Promise.all([
                 fetch(`${this.API_BASE}/contratos`),
                 fetch(`${this.API_BASE}/reportes-inquilinos`),
                 fetch(`${this.API_BASE}/reportes-inquilinos/estadisticas/tipos`),
-                fetch(`${this.API_BASE}/cuartos`)
+                fetch(`${this.API_BASE}/cuartos`),
+                fetch(`${this.API_BASE}/reportes-inquilinos?limit=5`)
             ]);
 
             // Procesar respuestas
-            if (contratosResponse.ok) {
-                this.data.contratos = await contratosResponse.json();
-            }
-
-            if (reportesResponse.ok) {
-                this.data.reportes = await reportesResponse.json();
-            }
-
+            this.data.contratos = contratosResponse.ok ? await contratosResponse.json() : [];
+            this.data.reportes = reportesResponse.ok ? await reportesResponse.json() : [];
+            this.data.cuartos = cuartosResponse.ok ? await cuartosResponse.json() : [];
+            
+            // Procesar estadísticas de tipos de reportes
             if (estadisticasResponse.ok) {
-                this.data.estadisticas = await estadisticasResponse.json();
-            }
-
-            if (cuartosResponse.ok) {
-                this.data.cuartos = await cuartosResponse.json();
+                const estadisticasData = await estadisticasResponse.json();
+                // Asegurar que tenemos todos los tipos de reportes
+                this.data.estadisticas = this.normalizeReportTypes(estadisticasData);
+            } else {
+                this.data.estadisticas = this.getDefaultStatistics();
             }
 
             // Actualizar la UI
             this.updateStats();
             this.updateCharts();
+            
+            // Cargar reportes recientes
+            if (reportesRecientesResponse.ok) {
+                const recentReports = await reportesRecientesResponse.json();
+                this.displayRecentReports(recentReports);
+            }
+
+            this.showNotification('Datos actualizados correctamente', 'success');
 
         } catch (error) {
             console.error('Error cargando datos del dashboard:', error);
-            this.showError('Error al cargar los datos del dashboard');
+            this.showNotification('Error al cargar los datos del dashboard', 'error');
         } finally {
             this.showLoading(false);
         }
+    }
+
+    normalizeReportTypes(estadisticasData) {
+        // Normalizar los tipos de reportes según los que realmente usas
+        const normalized = {
+            Mantenimiento: 0,
+            Urgente: 0,
+            Queja: 0,
+            Sugerencia: 0,
+            Otro: 0
+        };
+
+        // Mapear los datos del backend a los tipos que usas
+        Object.keys(estadisticasData).forEach(tipo => {
+            const tipoLower = tipo.toLowerCase();
+            if (tipoLower.includes('mantenimiento')) {
+                normalized.Mantenimiento += estadisticasData[tipo];
+            } else if (tipoLower.includes('urgente') || tipoLower.includes('emergencia')) {
+                normalized.Urgente += estadisticasData[tipo];
+            } else if (tipoLower.includes('queja') || tipoLower.includes('reclamo')) {
+                normalized.Queja += estadisticasData[tipo];
+            } else if (tipoLower.includes('sugerencia') || tipoLower.includes('sugerir')) {
+                normalized.Sugerencia += estadisticasData[tipo];
+            } else {
+                normalized.Otro += estadisticasData[tipo];
+            }
+        });
+
+        return normalized;
+    }
+
+    getDefaultStatistics() {
+        return {
+            Mantenimiento: 0,
+            Urgente: 0,
+            Queja: 0,
+            Sugerencia: 0,
+            Otro: 0
+        };
     }
 
     initializeCharts() {
@@ -68,22 +128,22 @@ class DashboardManager {
         this.charts.tiposReportes = new Chart(tiposReportesCtx, {
             type: 'bar',
             data: {
-                labels: ['Mantenimiento', 'Reparación', 'Limpieza', 'Seguridad', 'Otro'],
+                labels: this.data.tiposReportes,
                 datasets: [{
                     label: 'Cantidad de Reportes',
-                    data: [0, 0, 0, 0, 0],
+                    data: this.data.tiposReportes.map(tipo => this.data.estadisticas[tipo] || 0),
                     backgroundColor: [
-                        '#FF6B35',
-                        '#4CAF50',
-                        '#2196F3',
-                        '#FF9800',
-                        '#9C27B0'
+                        '#FF6B35',  // Mantenimiento - Naranja
+                        '#FF4444',  // Urgente - Rojo
+                        '#2196F3',  // Queja - Azul
+                        '#4CAF50',  // Sugerencia - Verde
+                        '#9C27B0'   // Otro - Morado
                     ],
                     borderColor: [
                         '#E55A2B',
-                        '#45a049',
+                        '#CC0000',
                         '#1976D2',
-                        '#F57C00',
+                        '#45a049',
                         '#7B1FA2'
                     ],
                     borderWidth: 2,
@@ -108,6 +168,14 @@ class DashboardManager {
                         },
                         bodyFont: {
                             size: 13
+                        },
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                return `${context.label}: ${value} (${percentage}%)`;
+                            }
                         }
                     }
                 },
@@ -118,10 +186,21 @@ class DashboardManager {
                             stepSize: 1,
                             font: {
                                 size: 12
+                            },
+                            callback: function(value) {
+                                return Number.isInteger(value) ? value : '';
                             }
                         },
                         grid: {
                             color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Cantidad',
+                            font: {
+                                size: 13,
+                                weight: 'bold'
+                            }
                         }
                     },
                     x: {
@@ -151,10 +230,10 @@ class DashboardManager {
                 datasets: [{
                     data: [0, 0, 0, 0],
                     backgroundColor: [
-                        '#4CAF50',
-                        '#F44336',
-                        '#FF9800',
-                        '#757575'
+                        '#4CAF50',  // Activos - Verde
+                        '#F44336',  // Inactivos - Rojo
+                        '#FF9800',  // Pendientes - Naranja
+                        '#757575'   // Finalizados - Gris
                     ],
                     borderColor: '#FFFFFF',
                     borderWidth: 3,
@@ -167,13 +246,33 @@ class DashboardManager {
                 cutout: '60%',
                 plugins: {
                     legend: {
-                        position: 'bottom',
+                        position: 'right',
                         labels: {
                             padding: 20,
                             usePointStyle: true,
                             pointStyle: 'circle',
                             font: {
                                 size: 12
+                            },
+                            generateLabels: (chart) => {
+                                const data = chart.data;
+                                if (data.labels.length && data.datasets.length) {
+                                    return data.labels.map((label, i) => {
+                                        const value = data.datasets[0].data[i];
+                                        const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+                                        
+                                        return {
+                                            text: `${label}: ${value} (${percentage}%)`,
+                                            fillStyle: data.datasets[0].backgroundColor[i],
+                                            strokeStyle: data.datasets[0].borderColor,
+                                            lineWidth: data.datasets[0].borderWidth,
+                                            hidden: false,
+                                            index: i
+                                        };
+                                    });
+                                }
+                                return [];
                             }
                         }
                     },
@@ -194,7 +293,8 @@ class DashboardManager {
                 },
                 animation: {
                     animateScale: true,
-                    animateRotate: true
+                    animateRotate: true,
+                    duration: 1000
                 }
             }
         });
@@ -203,36 +303,40 @@ class DashboardManager {
     updateStats() {
         // Total de contratos
         const totalContratos = this.data.contratos.length;
-        document.getElementById('totalContratos').textContent = totalContratos;
+        this.updateElementText('totalContratos', totalContratos);
 
         // Inquilinos activos (contratos activos)
-        const inquilinosActivos = this.data.contratos.filter(c => c.estadoContrato === 'ACTIVO').length;
-        document.getElementById('totalInquilinos').textContent = inquilinosActivos;
+        const inquilinosActivos = this.data.contratos.filter(c => 
+            c.estadoContrato && c.estadoContrato.toUpperCase() === 'ACTIVO'
+        ).length;
+        this.updateElementText('totalInquilinos', inquilinosActivos);
 
         // Reportes pendientes
         const reportesPendientes = this.data.reportes.filter(r => 
-            r.estadoReporte === 'PENDIENTE' || !r.estadoReporte
+            r.estadoReporte && (
+                r.estadoReporte.toUpperCase() === 'PENDIENTE' || 
+                r.estadoReporte.toLowerCase() === 'abierto'
+            )
         ).length;
-        document.getElementById('reportesPendientes').textContent = reportesPendientes;
+        this.updateElementText('reportesPendientes', reportesPendientes);
 
         // Cuartos disponibles
         const cuartosDisponibles = this.data.cuartos ? 
-            this.data.cuartos.filter(c => c.estado === 'DISPONIBLE').length : 0;
-        document.getElementById('cuartosDisponibles').textContent = cuartosDisponibles;
+            this.data.cuartos.filter(c => 
+                c.estado && c.estado.toUpperCase() === 'DISPONIBLE'
+            ).length : 0;
+        this.updateElementText('cuartosDisponibles', cuartosDisponibles);
     }
 
     updateCharts() {
         // Actualizar gráfica de tipos de reportes
-        if (this.data.estadisticas.datos) {
-            const datos = this.data.estadisticas.datos;
-            this.charts.tiposReportes.data.datasets[0].data = [
-                datos.Mantenimiento || 0,
-                datos.Reparacion || 0,
-                datos.Limpieza || 0,
-                datos.Seguridad || 0,
-                datos.Otro || 0
-            ];
-            this.charts.tiposReportes.update();
+        if (this.data.estadisticas) {
+            const chartData = this.data.tiposReportes.map(tipo => 
+                this.data.estadisticas[tipo] || 0
+            );
+            
+            this.charts.tiposReportes.data.datasets[0].data = chartData;
+            this.charts.tiposReportes.update('none');
         }
 
         // Actualizar gráfica de estado de contratos
@@ -244,8 +348,17 @@ class DashboardManager {
         };
 
         this.data.contratos.forEach(contrato => {
-            if (estadosContratos.hasOwnProperty(contrato.estadoContrato)) {
-                estadosContratos[contrato.estadoContrato]++;
+            if (contrato.estadoContrato) {
+                const estado = contrato.estadoContrato.toUpperCase();
+                if (estadosContratos.hasOwnProperty(estado)) {
+                    estadosContratos[estado]++;
+                } else if (estado.includes('FINAL')) {
+                    estadosContratos.FINALIZADO++;
+                } else if (estado.includes('PEND')) {
+                    estadosContratos.PENDIENTE++;
+                } else {
+                    estadosContratos.INACTIVO++;
+                }
             }
         });
 
@@ -255,42 +368,157 @@ class DashboardManager {
             estadosContratos.PENDIENTE,
             estadosContratos.FINALIZADO
         ];
-        this.charts.estadoContratos.update();
+        this.charts.estadoContratos.update('none');
+    }
+
+    filterReportsByType(tipo) {
+        if (tipo === 'all') {
+            // Mostrar todos los datos
+            this.updateCharts();
+            return;
+        }
+
+        // Filtrar reportes por tipo
+        const filteredReports = this.data.reportes.filter(reporte => 
+            reporte.tipo && reporte.tipo.toLowerCase() === tipo.toLowerCase()
+        );
+
+        // Actualizar estadísticas filtradas
+        const filteredStats = { ...this.data.estadisticas };
+        Object.keys(filteredStats).forEach(key => {
+            filteredStats[key] = key === tipo ? filteredStats[key] : 0;
+        });
+
+        // Actualizar gráfica
+        this.charts.tiposReportes.data.datasets[0].data = 
+            this.data.tiposReportes.map(t => filteredStats[t] || 0);
+        this.charts.tiposReportes.update();
+    }
+
+    displayRecentReports(reports) {
+        const container = document.getElementById('recentReports');
+        if (!container) return;
+
+        if (!reports || reports.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No hay reportes recientes</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = reports.map(reporte => `
+            <div class="recent-item ${reporte.estadoReporte === 'abierto' ? 'pending' : 'resolved'}">
+                <div class="recent-icon">
+                    <i class="fas fa-${this.getReportIcon(reporte.tipo)}"></i>
+                </div>
+                <div class="recent-details">
+                    <h4>${reporte.nombre || 'Reporte sin nombre'}</h4>
+                    <p class="recent-description">${this.truncateText(reporte.descripcion || '', 80)}</p>
+                    <div class="recent-meta">
+                        <span class="recent-type">${reporte.tipo || 'Sin tipo'}</span>
+                        <span class="recent-date">${this.formatDate(reporte.fecha)}</span>
+                        <span class="recent-status ${reporte.estadoReporte}">${this.getStatusText(reporte.estadoReporte)}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    getReportIcon(tipo) {
+        if (!tipo) return 'exclamation-circle';
+        
+        const tipoLower = tipo.toLowerCase();
+        if (tipoLower.includes('mantenimiento')) return 'tools';
+        if (tipoLower.includes('urgente')) return 'exclamation-triangle';
+        if (tipoLower.includes('queja')) return 'comment-exclamation';
+        if (tipoLower.includes('sugerencia')) return 'lightbulb';
+        return 'exclamation-circle';
+    }
+
+    getStatusText(status) {
+        if (!status) return 'Desconocido';
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower === 'abierto') return 'Pendiente';
+        if (statusLower === 'cerrado') return 'Resuelto';
+        if (statusLower === 'pendiente') return 'En proceso';
+        return status;
+    }
+
+    formatDate(dateString) {
+        if (!dateString) return 'Fecha desconocida';
+        
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+        } catch (e) {
+            return dateString;
+        }
+    }
+
+    truncateText(text, maxLength) {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength) + '...';
+    }
+
+    updateElementText(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            // Animación de conteo
+            const currentValue = parseInt(element.textContent) || 0;
+            this.animateCounter(element, currentValue, value, 1000);
+        }
+    }
+
+    animateCounter(element, start, end, duration) {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const currentValue = Math.floor(progress * (end - start) + start);
+            element.textContent = currentValue;
+            
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                element.textContent = end;
+            }
+        };
+        window.requestAnimationFrame(step);
     }
 
     showLoading(show) {
         const overlay = document.getElementById('loadingOverlay');
-        
-        if (show) {
-            overlay.style.display = 'flex';
-        } else {
-            overlay.style.display = 'none';
+        if (overlay) {
+            overlay.style.display = show ? 'flex' : 'none';
         }
     }
 
-    showError(message) {
-        this.showNotification(message, 'error');
-    }
+    showNotification(message, type = 'info') {
+        // Eliminar notificaciones anteriores
+        const existingNotifications = document.querySelectorAll('.notification');
+        existingNotifications.forEach(notification => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        });
 
-    showNotification(message, type) {
+        // Crear nueva notificación
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 15px 20px;
-            background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'};
-            color: white;
-            border-radius: 6px;
-            box-shadow: var(--shadow-lg);
-            z-index: 10000;
-            animation: slideInRight 0.3s ease;
-        `;
         notification.textContent = message;
 
         document.body.appendChild(notification);
 
+        // Auto-remover después de 3 segundos
         setTimeout(() => {
             notification.style.animation = 'slideOutRight 0.3s ease';
             setTimeout(() => {
@@ -305,31 +533,9 @@ class DashboardManager {
 // Inicializar el dashboard cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboardManager = new DashboardManager();
-});
-
-// Agregar estilos CSS para las animaciones
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
     
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
+    // Actualizar automáticamente cada 30 segundos
+    setInterval(() => {
+        window.dashboardManager.loadDashboardData();
+    }, 30000);
+});
