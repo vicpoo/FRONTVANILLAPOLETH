@@ -6,7 +6,7 @@ class ContratosManager {
         this.cuartos = [];
         this.currentContrato = null;
         this.currentAction = null;
-        this.API_BASE = 'http://localhost:8000/api';
+        this.API_BASE = 'http://44.222.55.146:8000/api';
         this.token = localStorage.getItem('authToken');
         this.init();
     }

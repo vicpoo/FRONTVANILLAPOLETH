@@ -1,6 +1,6 @@
 class DashboardManager {
     constructor() {
-        this.API_BASE = 'http://localhost:8000/api';
+        this.API_BASE = 'http://44.222.55.146:8000/api';
         this.charts = {};
         this.data = {
             estadisticas: {},

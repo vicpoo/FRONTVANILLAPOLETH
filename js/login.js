@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnText = loginBtn.querySelector('.btn-text');
     
     // URL base de tu API - Asegúrate que el puerto 8000 es correcto
-    const API_BASE_URL = 'http://localhost:8000/api';
+    const API_BASE_URL = 'http://44.222.55.146:8000/api';
     
     if (loginForm) {
         loginForm.addEventListener('submit', function(e) {

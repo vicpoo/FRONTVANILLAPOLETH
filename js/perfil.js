@@ -1,7 +1,7 @@
 // perfil.js
 // perfil.js
 document.addEventListener('DOMContentLoaded', function() {
-    const API_BASE_URL = 'http://localhost:8000/api';
+    const API_BASE_URL = 'http://44.222.55.146:8000/api';
     let userData = null;
     let authToken = null;
     let tokenClaims = null;

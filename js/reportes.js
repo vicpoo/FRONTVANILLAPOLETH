@@ -1,6 +1,5 @@
-// reportes.js
 document.addEventListener('DOMContentLoaded', function() {
-    const API_BASE_URL = 'http://localhost:8000/api';
+    const API_BASE_URL = 'http://44.222.55.146:8000/api';
     let authToken = null;
     let userData = null;
     let idInquilino = null;
@@ -87,17 +86,17 @@ document.addEventListener('DOMContentLoaded', function() {
             userData = JSON.parse(storedUserData);
             console.log('👤 Datos de usuario cargados:', userData);
             
-            // OBTENER idInquilino DIRECTAMENTE DESDE EL TOKEN
-            idInquilino = obtenerInquilinoIdDesdeToken(authToken);
+            // OBTENER idInquilino DESDE userData
+            idInquilino = obtenerInquilinoIdDesdeDatosUsuario(userData);
             
             if (!idInquilino) {
-                console.error('❌ No se pudo identificar el inquilino desde el token');
+                console.error('❌ No se pudo identificar el inquilino');
                 showError('No se pudo identificar el inquilino. Por favor inicia sesión nuevamente.');
                 setTimeout(() => redirectToLogin(), 2000);
                 return;
             }
 
-            console.log('✅ ID Inquilino confirmado desde token:', idInquilino);
+            console.log('✅ ID Inquilino confirmado:', idInquilino);
             
             // Cargar cuartos primero
             await loadCuartos();
@@ -106,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ Aplicación inicializada correctamente');
         } catch (error) {
             console.error('❌ Error inicializando reportes:', error);
-            showError('Error al cargar los reportes');
+            showError('Error al cargar los reportes: ' + error.message);
         }
     }
 
@@ -159,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cuartos.forEach(cuarto => {
             const option = document.createElement('option');
             option.value = cuarto.idCuarto;
-            option.textContent = `${cuarto.nombreCuarto} (ID: ${cuarto.idCuarto})`;
+            option.textContent = cuarto.nombreCuarto || `Cuarto ${cuarto.idCuarto}`;
             
             elements.reporteCuarto.appendChild(option.cloneNode(true));
             elements.editarCuarto.appendChild(option);
@@ -172,49 +171,36 @@ document.addEventListener('DOMContentLoaded', function() {
     function getCuartoNombreById(idCuarto) {
         if (!idCuarto) return 'No especificado';
         
-        const cuarto = cuartos.find(c => c.idCuarto === idCuarto);
-        return cuarto ? `${cuarto.nombreCuarto} (ID: ${cuarto.idCuarto})` : `Cuarto ID: ${idCuarto}`;
+        const cuarto = cuartos.find(c => c.idCuarto == idCuarto);
+        return cuarto ? (cuarto.nombreCuarto || `Cuarto ${cuarto.idCuarto}`) : `Cuarto ID: ${idCuarto}`;
     }
 
-    // Función simplificada para obtener idInquilino desde el token
-    function obtenerInquilinoIdDesdeToken(token) {
-        console.log('🔍 Obteniendo idInquilino desde token JWT...');
+    // Función corregida para obtener idInquilino desde userData
+    function obtenerInquilinoIdDesdeDatosUsuario(userData) {
+        console.log('🔍 Obteniendo idInquilino desde userData...');
+        
         try {
-            const tokenPayload = parseJwt(token);
-            console.log('📋 Token payload completo:', tokenPayload);
+            // Intentar obtener idInquilino de diferentes posibles ubicaciones en userData
+            let idInquilino = null;
             
-            // Buscar inquilinoId en el token
-            if (tokenPayload && tokenPayload.inquilinoId) {
-                console.log('✅ ID Inquilino encontrado en token:', tokenPayload.inquilinoId);
-                return tokenPayload.inquilinoId;
+            if (userData.inquilino && userData.inquilino.idInquilino) {
+                idInquilino = userData.inquilino.idInquilino;
+            } else if (userData.idInquilino) {
+                idInquilino = userData.idInquilino;
+            } else if (userData.id) {
+                idInquilino = userData.id;
             }
             
-            // Si no está en el token, buscar en userData como fallback
-            if (userData && userData.inquilino && userData.inquilino.idInquilino) {
-                console.log('✅ ID Inquilino encontrado en userData:', userData.inquilino.idInquilino);
-                return userData.inquilino.idInquilino;
+            if (idInquilino) {
+                console.log('✅ ID Inquilino encontrado en userData:', idInquilino);
+                return idInquilino;
             }
             
-            console.warn('⚠️ inquilinoId no encontrado en el token ni en userData');
-            console.warn('📋 Estructura de userData:', userData);
+            console.warn('⚠️ idInquilino no encontrado en userData');
+            console.warn('📋 Estructura de userData:', JSON.stringify(userData, null, 2));
             return null;
         } catch (error) {
-            console.error('❌ Error decodificando JWT:', error);
-            return null;
-        }
-    }
-
-    // Función para decodificar JWT
-    function parseJwt(token) {
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        } catch (error) {
-            console.error('❌ Error decodificando JWT:', error);
+            console.error('❌ Error obteniendo idInquilino:', error);
             return null;
         }
     }
@@ -234,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok) {
                 reportes = await response.json();
                 console.log('✅ Reportes cargados:', reportes.length);
+                console.log('📋 Primer reporte:', reportes.length > 0 ? reportes[0] : 'Ninguno');
                 updateDashboardStats();
                 renderReportesTable();
             } else if (response.status === 404) {
@@ -258,9 +245,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateDashboardStats() {
         const total = reportes.length;
-        const pendientes = reportes.filter(r => r.estadoReporte === 'Pendiente' || !r.estadoReporte).length;
-        const resueltos = reportes.filter(r => r.estadoReporte === 'Resuelto').length;
-        const proceso = reportes.filter(r => r.estadoReporte === 'En Proceso').length;
+        const pendientes = reportes.filter(r => 
+            r.estadoReporte === 'Pendiente' || 
+            r.estadoReporte === 'abierto' || 
+            !r.estadoReporte
+        ).length;
+        const resueltos = reportes.filter(r => 
+            r.estadoReporte === 'Resuelto' || 
+            r.estadoReporte === 'resuelto' ||
+            r.estadoReporte === 'cerrado'
+        ).length;
+        const proceso = reportes.filter(r => 
+            r.estadoReporte === 'En Proceso' || 
+            r.estadoReporte === 'proceso'
+        ).length;
 
         elements.totalReportes.textContent = total;
         elements.reportesPendientes.textContent = pendientes;
@@ -283,18 +281,22 @@ document.addEventListener('DOMContentLoaded', function() {
         data.forEach(reporte => {
             const row = document.createElement('tr');
             const estado = reporte.estadoReporte || 'Pendiente';
+            
+            // Convertir estado a formato legible
+            const estadoLegible = convertirEstado(estado);
+            
             row.innerHTML = `
-                <td>${reporte.idReporte}</td>
-                <td>${escapeHtml(reporte.nombre)}</td>
+                <td>${reporte.idReporte || 'N/A'}</td>
+                <td>${escapeHtml(reporte.nombre || 'Sin nombre')}</td>
                 <td>${escapeHtml(reporte.tipo || 'No especificado')}</td>
-                <td>${truncateText(reporte.descripcion, 50)}</td>
+                <td>${truncateText(reporte.descripcion || '', 50)}</td>
                 <td>${formatDate(reporte.fecha)}</td>
-                <td><span class="status-badge status-${getStatusClass(estado)}">${estado}</span></td>
+                <td><span class="status-badge status-${getStatusClass(estado)}">${estadoLegible}</span></td>
                 <td class="table-actions-cell">
                     <button class="btn-action btn-view view-reporte" data-id="${reporte.idReporte}">
                         <i class="fas fa-eye"></i> Ver
                     </button>
-                    ${estado === 'Pendiente' ? `
+                    ${(estado === 'Pendiente' || estado === 'abierto') ? `
                     <button class="btn-action btn-edit edit-reporte" data-id="${reporte.idReporte}">
                         <i class="fas fa-edit"></i> Editar
                     </button>
@@ -309,6 +311,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updatePaginationInfo(data.length);
         attachTableEventListeners();
+    }
+
+    function convertirEstado(estado) {
+        const estados = {
+            'abierto': 'Pendiente',
+            'pendiente': 'Pendiente',
+            'proceso': 'En Proceso',
+            'resuelto': 'Resuelto',
+            'cerrado': 'Cerrado'
+        };
+        return estados[estado.toLowerCase()] || estado;
     }
 
     function showEmptyState() {
@@ -441,18 +454,18 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        elements.detailId.textContent = reporte.idReporte;
-        elements.detailNombre.textContent = reporte.nombre;
+        elements.detailId.textContent = reporte.idReporte || 'N/A';
+        elements.detailNombre.textContent = reporte.nombre || 'Sin nombre';
         elements.detailTipo.textContent = reporte.tipo || 'No especificado';
-        elements.detailDescripcion.textContent = reporte.descripcion;
+        elements.detailDescripcion.textContent = reporte.descripcion || 'Sin descripción';
         elements.detailFecha.textContent = formatDate(reporte.fecha);
         
         // Mostrar nombre del cuarto en lugar del ID
         elements.detailCuarto.textContent = getCuartoNombreById(reporte.idCuarto);
         
-        // Estado
+        // Estado convertido a formato legible
         const estado = reporte.estadoReporte || 'Pendiente';
-        elements.detailEstado.textContent = estado;
+        elements.detailEstado.textContent = convertirEstado(estado);
         elements.detailEstado.className = `status-badge status-${getStatusClass(estado)}`;
 
         elements.verReporteModal.style.display = 'block';
@@ -467,11 +480,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         elements.editarReporteId.value = reporte.idReporte;
-        elements.editarNombre.value = reporte.nombre;
+        elements.editarNombre.value = reporte.nombre || '';
         elements.editarTipo.value = reporte.tipo || '';
-        elements.editarDescripcion.value = reporte.descripcion;
+        elements.editarDescripcion.value = reporte.descripcion || '';
         elements.editarCuarto.value = reporte.idCuarto || '';
-        elements.editarFecha.value = reporte.fecha || '';
+        
+        // Formatear fecha para input date
+        if (reporte.fecha) {
+            const date = new Date(reporte.fecha + 'T00:00:00');
+            elements.editarFecha.value = date.toISOString().split('T')[0];
+        } else {
+            elements.editarFecha.value = new Date().toISOString().split('T')[0];
+        }
         
         updateEditarDescripcionCounter();
         elements.editarReporteModal.style.display = 'block';
@@ -504,17 +524,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            if (response.ok) {
+            if (response.ok || response.status === 204) {
                 console.log('✅ Reporte eliminado correctamente');
                 showNotification('Reporte eliminado correctamente', 'success');
                 await loadReportes();
             } else {
-                console.error('❌ Error al eliminar reporte:', response.status);
+                const errorData = await response.text();
+                console.error('❌ Error al eliminar reporte:', response.status, errorData);
                 throw new Error('Error al eliminar el reporte');
             }
         } catch (error) {
             console.error('❌ Error eliminando reporte:', error);
-            showNotification('Error al eliminar el reporte', 'error');
+            showNotification('Error al eliminar el reporte: ' + error.message, 'error');
         } finally {
             closeConfirmModal();
         }
@@ -532,7 +553,7 @@ document.addEventListener('DOMContentLoaded', function() {
             descripcion: elements.reporteDescripcion.value.trim(),
             fecha: elements.reporteFecha.value,
             idCuarto: elements.reporteCuarto.value ? parseInt(elements.reporteCuarto.value) : null,
-            estadoReporte: 'Pendiente'
+            estadoReporte: 'abierto'
         };
 
         console.log('📋 Datos del reporte:', reporteData);
@@ -582,13 +603,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 await loadReportes();
             } else {
                 const errorData = await response.text();
-                console.error('❌ Error del servidor:', errorData);
+                console.error('❌ Error del servidor:', response.status, errorData);
                 throw new Error(errorData || 'Error al crear el reporte');
             }
 
         } catch (error) {
             console.error('❌ Error creando reporte:', error);
-            showNotification(error.message || 'Error al crear el reporte', 'error');
+            showNotification('Error al crear el reporte: ' + error.message, 'error');
         } finally {
             // Restaurar estado del botón
             const submitBtn = elements.nuevoReporteForm.querySelector('button[type="submit"]');
@@ -610,7 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
             descripcion: elements.editarDescripcion.value.trim(),
             fecha: elements.editarFecha.value,
             idCuarto: elements.editarCuarto.value ? parseInt(elements.editarCuarto.value) : null,
-            estadoReporte: 'Pendiente'
+            estadoReporte: 'abierto'
         };
 
         console.log('📋 Datos actualizados:', reporteData);
@@ -631,6 +652,11 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        if (!reporteData.fecha) {
+            showNotification('La fecha del reporte es requerida', 'error');
+            return;
+        }
+
         try {
             // Mostrar estado de carga
             const submitBtn = elements.editarReporteForm.querySelector('button[type="submit"]');
@@ -647,19 +673,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             if (response.ok) {
-                console.log('✅ Reporte actualizado correctamente');
+                const updatedReporte = await response.json();
+                console.log('✅ Reporte actualizado correctamente:', updatedReporte);
                 showNotification('Reporte actualizado correctamente', 'success');
                 elements.editarReporteModal.style.display = 'none';
                 await loadReportes();
             } else {
                 const errorData = await response.text();
-                console.error('❌ Error del servidor:', errorData);
+                console.error('❌ Error del servidor:', response.status, errorData);
                 throw new Error(errorData || 'Error al actualizar el reporte');
             }
 
         } catch (error) {
             console.error('❌ Error actualizando reporte:', error);
-            showNotification(error.message || 'Error al actualizar el reporte', 'error');
+            showNotification('Error al actualizar el reporte: ' + error.message, 'error');
         } finally {
             // Restaurar estado del botón
             const submitBtn = elements.editarReporteForm.querySelector('button[type="submit"]');
@@ -673,8 +700,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🔍 Buscando:', searchTerm);
         
         const filteredReportes = reportes.filter(reporte => 
-            reporte.nombre.toLowerCase().includes(searchTerm) ||
-            reporte.descripcion.toLowerCase().includes(searchTerm) ||
+            (reporte.nombre && reporte.nombre.toLowerCase().includes(searchTerm)) ||
+            (reporte.descripcion && reporte.descripcion.toLowerCase().includes(searchTerm)) ||
             (reporte.tipo && reporte.tipo.toLowerCase().includes(searchTerm))
         );
         
@@ -689,9 +716,11 @@ document.addEventListener('DOMContentLoaded', function() {
         let filteredReportes = reportes;
 
         if (statusFilter) {
-            filteredReportes = reportes.filter(reporte => 
-                (reporte.estadoReporte || 'Pendiente') === statusFilter
-            );
+            filteredReportes = reportes.filter(reporte => {
+                const estado = reporte.estadoReporte || 'Pendiente';
+                const estadoLegible = convertirEstado(estado);
+                return estadoLegible === statusFilter;
+            });
         }
 
         console.log('📊 Reportes filtrados:', filteredReportes.length);
@@ -710,23 +739,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Utilidades
     function getStatusClass(estado) {
+        const estadoLower = estado.toLowerCase();
         const statusMap = {
-            'Pendiente': 'pendiente',
-            'En Proceso': 'proceso',
-            'Resuelto': 'resuelto',
-            'Cerrado': 'cerrado'
+            'pendiente': 'pendiente',
+            'abierto': 'pendiente',
+            'en proceso': 'proceso',
+            'proceso': 'proceso',
+            'resuelto': 'resuelto',
+            'cerrado': 'cerrado'
         };
-        return statusMap[estado] || 'pendiente';
+        return statusMap[estadoLower] || 'pendiente';
     }
 
     function formatDate(dateString) {
         if (!dateString) return 'No especificada';
-        const date = new Date(dateString + 'T00:00:00');
-        return date.toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        try {
+            // Asegurar que la fecha tenga el formato correcto
+            const date = new Date(dateString + 'T00:00:00');
+            if (isNaN(date.getTime())) {
+                return dateString;
+            }
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        } catch (error) {
+            console.error('❌ Error formateando fecha:', dateString, error);
+            return dateString;
+        }
     }
 
     function truncateText(text, maxLength) {
@@ -751,14 +792,28 @@ document.addEventListener('DOMContentLoaded', function() {
     function showNotification(message, type = 'success') {
         console.log(`📢 Notificación [${type}]:`, message);
         
+        // Eliminar notificaciones anteriores
+        document.querySelectorAll('.notification').forEach(n => n.remove());
+        
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+            <span>${message}</span>
+        `;
         
         document.body.appendChild(notification);
         
+        // Mostrar notificación
         setTimeout(() => {
-            notification.style.animation = 'slideOutRight 0.3s ease';
+            notification.style.opacity = '1';
+            notification.style.transform = 'translateY(0)';
+        }, 10);
+        
+        // Ocultar después de 5 segundos
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            notification.style.transform = 'translateY(-100%)';
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
@@ -771,9 +826,39 @@ document.addEventListener('DOMContentLoaded', function() {
         showNotification(message, 'error');
     }
 
-    function redirectToLogin() {
-        window.location.href = '../index.html';
-    }
+
+
+    // Estilos para notificaciones
+    const style = document.createElement('style');
+    style.textContent = `
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(-100%);
+            transition: opacity 0.3s, transform 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .notification.success {
+            background-color: #4CAF50;
+        }
+        .notification.error {
+            background-color: #f44336;
+        }
+        .notification i {
+            font-size: 1.2em;
+        }
+    `;
+    document.head.appendChild(style);
 
     // Manejar errores no capturados
     window.addEventListener('error', function(e) {

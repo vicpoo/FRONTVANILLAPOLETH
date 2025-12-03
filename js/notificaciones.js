@@ -5,7 +5,7 @@ class NotificacionesManager {
         this.contratos = [];
         this.currentNotificacion = null;
         this.currentAction = null;
-        this.API_BASE = 'http://localhost:8000/api';
+        this.API_BASE = 'http://44.222.55.146:8000/api';
         this.init();
     }
 

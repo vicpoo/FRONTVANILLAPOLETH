@@ -6,7 +6,7 @@ class PagosManager {
         this.currentAction = null;
         this.currentUserId = null;
         this.currentUserRole = null;
-        this.API_BASE = 'http://localhost:8000/api';
+        this.API_BASE = 'http://44.222.55.146:8000/api';
         this.init();
     }
 
