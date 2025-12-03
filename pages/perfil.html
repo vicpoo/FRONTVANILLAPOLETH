@@ -45,16 +45,16 @@
                     </div>
                     <div class="profile-stats">
                         <div class="stat-item">
-                            <span class="stat-number" id="statContratos">0</span>
-                            <span class="stat-label">Contratos</span>
+                            <span class="stat-number" id="statUsuarioId">-</span>
+                            <span class="stat-label">ID Usuario</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number" id="statPagos">0</span>
-                            <span class="stat-label">Pagos</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number" id="statActivo">Sí</span>
+                            <span class="stat-number" id="statEstado">-</span>
                             <span class="stat-label">Estado</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="statRolId">-</span>
+                            <span class="stat-label">Rol ID</span>
                         </div>
                     </div>
                 </div>
@@ -75,8 +75,8 @@
                                     <p id="infoUsername">-</p>
                                 </div>
                                 <div class="info-item">
-                                    <label>Tipo de Usuario</label>
-                                    <p id="infoUserType">-</p>
+                                    <label>Email</label>
+                                    <p id="infoEmail">-</p>
                                 </div>
                                 <div class="info-item">
                                     <label>Rol</label>
@@ -90,14 +90,31 @@
                         </div>
                     </div>
 
-                    <!-- Información Específica -->
+                    <!-- Información del Sistema -->
                     <div class="info-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-info-circle"></i> Información Específica</h3>
+                            <h3><i class="fas fa-info-circle"></i> Información del Sistema</h3>
                         </div>
                         <div class="card-body">
-                            <div id="specificInfoContent">
-                                <p class="loading">Cargando información específica...</p>
+                            <div id="systemInfoContent">
+                                <div class="info-grid">
+                                    <div class="info-item">
+                                        <label>ID Usuario</label>
+                                        <p id="systemUserId">-</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Estado de Usuario</label>
+                                        <p id="systemUserStatus">-</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>ID de Rol</label>
+                                        <p id="systemRoleId">-</p>
+                                    </div>
+                                    <div class="info-item">
+                                        <label>Nombre de Rol</label>
+                                        <p id="systemRoleName">-</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -113,13 +130,9 @@
                                     <label>Teléfono</label>
                                     <p id="infoPhone">-</p>
                                 </div>
-                                <div class="info-item">
-                                    <label>Dirección</label>
-                                    <p id="infoAddress">-</p>
-                                </div>
                                 <div class="info-item full-width">
-                                    <label>Información Adicional</label>
-                                    <p id="infoAdditional">-</p>
+                                    <label>Email de Contacto</label>
+                                    <p id="infoContactEmail">-</p>
                                 </div>
                             </div>
                         </div>
@@ -161,6 +174,10 @@
                 <div class="info-item">
                     <label><i class="fas fa-user-tag"></i> Rol:</label>
                     <span id="sessionRole">-</span>
+                </div>
+                <div class="info-item">
+                    <label><i class="fas fa-envelope"></i> Email:</label>
+                    <span id="sessionEmail">-</span>
                 </div>
                 <div class="info-item">
                     <label><i class="fas fa-clock"></i> Token Generado:</label>

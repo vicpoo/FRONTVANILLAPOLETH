@@ -18,8 +18,7 @@
                 <ul>
                     <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                     <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
-                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
-                    <li><a href="propietarios.html"><i class="fas fa-user-tie"></i> Propietarios</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Usuarios</a></li>
                     <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
                     <li class="active"><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
                     <li><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>
@@ -183,13 +182,15 @@
                         <input type="date" id="fechaReporte" name="fechaReporte" required>
                     </div>
                     <div class="form-group">
-                        <label for="prioridadMantenimiento">Prioridad</label>
-                        <select id="prioridadMantenimiento" name="estadoMantenimiento">
-                            <option value="Pendiente">Pendiente</option>
-                            <option value="Alta">Alta</option>
-                            <option value="Media">Media</option>
-                            <option value="Baja">Baja</option>
-                        </select>
+                        <label for="prioridadMantenimiento">Prioridad</label><select id="estadoMantenimiento" name="estadoMantenimiento">
+    <option value="Pendiente">Pendiente</option>
+    <option value="Alta">Alta</option>
+    <option value="Media">Media</option>
+    <option value="Baja">Baja</option>
+    <option value="En Proceso">En Proceso</option>
+    <option value="Completado">Completado</option>
+    <option value="Cancelado">Cancelado</option>
+</select>
                     </div>
                     <div class="form-group full-width">
                         <label for="descripcionProblema">Descripción del Problema *</label>

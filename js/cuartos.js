@@ -76,7 +76,7 @@ class CuartosManager {
         const propiedadesCuarto = [
             cuarto.nombreCuarto,
             cuarto.descripcionCuarto,
-            cuarto.propietario?.nombre,
+            cuarto.propietario?.username, // Cambiado de nombre a username
             cuarto.propietario?.email
         ].some(prop => prop && prop.toLowerCase().includes(searchTerm));
 
@@ -115,7 +115,7 @@ class CuartosManager {
                 <div class="cuarto-header">
                     <div>
                         <h3 class="cuarto-numero">${this.escapeHtml(cuarto.nombreCuarto)}</h3>
-                        ${cuarto.propietario ? `<p class="cuarto-propietario">Propietario: ${this.escapeHtml(cuarto.propietario.nombre)}</p>` : ''}
+                        ${cuarto.propietario ? `<p class="cuarto-propietario">Propietario: ${this.escapeHtml(cuarto.propietario.username)}</p>` : ''}
                     </div>
                     <span class="status-badge status-${estado.toLowerCase()}">${estado}</span>
                 </div>
@@ -279,8 +279,8 @@ class CuartosManager {
                     <h3><i class="fas fa-user"></i> Propietario</h3>
                     <div class="detalle-grid">
                         <div class="detalle-item">
-                            <strong>Nombre:</strong>
-                            <span>${this.escapeHtml(cuarto.propietario.nombre)}</span>
+                            <strong>Username:</strong>
+                            <span>${this.escapeHtml(cuarto.propietario.username)}</span>
                         </div>
                         ${cuarto.propietario.email ? `
                         <div class="detalle-item">

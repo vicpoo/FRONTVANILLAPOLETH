@@ -7,6 +7,71 @@
     <title>Bitácora de Reportes</title>
     <link rel="stylesheet" href="../css/bitacora.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Estilos adicionales para spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Estilos para notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 10000;
+            animation: slideInRight 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
+        }
+        
+        .notification.success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .notification.error {
+            background: #dc3545;
+            color: white;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -19,8 +84,7 @@
                 <ul>
                     <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
                     <li><a href="contratos.html"><i class="fas fa-file-contract"></i> Contratos</a></li>
-                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Inquilinos</a></li>
-                    <li><a href="propietarios.html"><i class="fas fa-user-tie"></i> Propietarios</a></li>
+                    <li><a href="inquilinos.html"><i class="fas fa-users"></i> Usuarios</a></li>
                     <li><a href="cuartos-muebles.html"><i class="fas fa-door-closed"></i> Cuartos y Muebles</a></li>
                     <li><a href="mantenimiento.html"><i class="fas fa-tools"></i> Mantenimiento</a></li>
                     <li class="active"><a href="bitacora.html"><i class="fas fa-clipboard-list"></i> Bitácora</a></li>          
@@ -89,10 +153,10 @@
                         <label for="filterEstado">Estado</label>
                         <select id="filterEstado">
                             <option value="">Todos los estados</option>
-                            <option value="PENDIENTE">Pendiente</option>
-                            <option value="EN_PROCESO">En Proceso</option>
-                            <option value="RESUELTO">Resuelto</option>
-                            <option value="CANCELADO">Cancelado</option>
+                            <option value="Pendiente">Pendiente</option>
+                            <option value="En Proceso">En Proceso</option>
+                            <option value="Resuelto">Resuelto</option>
+                            <option value="Cancelado">Cancelado</option>
                         </select>
                     </div>
                     <div class="filter-group">
@@ -109,6 +173,7 @@
                         <label for="filterInquilino">Inquilino</label>
                         <select id="filterInquilino">
                             <option value="">Todos los inquilinos</option>
+                            <!-- Se cargarán dinámicamente -->
                         </select>
                     </div>
                     <div class="filter-group">
@@ -192,8 +257,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="idCuarto">Cuarto</label>
-                        <select id="idCuarto" name="idCuarto">
+                        <label for="idCuarto">Cuarto *</label>
+                        <select id="idCuarto" name="idCuarto" required>
                             <option value="">Seleccionar cuarto...</option>
                         </select>
                     </div>
@@ -232,7 +297,9 @@
 
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="btnCancelar">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btnGuardar">Guardar Reporte</button>
+                    <button type="submit" class="btn-primary" id="btnGuardar">
+                        <span class="button-text">Guardar Reporte</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -279,7 +346,9 @@
 
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" id="btnCancelarHistorial">Cancelar</button>
-                    <button type="submit" class="btn-primary" id="btnGuardarHistorial">Guardar Historial</button>
+                    <button type="submit" class="btn-primary" id="btnGuardarHistorial">
+                        <span class="button-text">Guardar Historial</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -297,7 +366,9 @@
             </div>
             <div class="modal-actions">
                 <button class="btn-secondary" id="btnCancelarAccion">Cancelar</button>
-                <button class="btn-danger" id="btnConfirmarAccion">Confirmar</button>
+                <button class="btn-danger" id="btnConfirmarAccion">
+                    <span class="button-text">Confirmar</span>
+                </button>
             </div>
         </div>
     </div>

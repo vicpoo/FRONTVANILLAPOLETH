@@ -1,10 +1,10 @@
-// bitacora.js
 class BitacoraManager {
     constructor() {
         this.reportes = [];
         this.historial = [];
-        this.inquilinos = [];
+        this.inquilinos = []; // Usuarios con rol id 2
         this.cuartos = [];
+        this.contratos = []; // Necesitamos contratos para relacionar inquilinos con cuartos
         this.currentReporte = null;
         this.currentHistorial = null;
         this.currentAction = null;
@@ -12,40 +12,66 @@ class BitacoraManager {
         this.init();
     }
 
-    init() {
+    async init() {
         this.bindEvents();
-        this.loadReportes();
-        this.loadInquilinos();
-        this.loadCuartos();
+        await this.loadInquilinos(); // Cargar usuarios con rol id 2
+        await this.loadCuartos();
+        await this.loadContratos(); // Cargar contratos para relacionar inquilinos con cuartos
+        await this.loadReportes();
+        await this.loadHistorial();
         this.setupFilters();
-        // Cargar historial general al inicio
-        this.loadHistorial();
+        this.updateStats();
     }
 
     bindEvents() {
         // Botones principales
-        document.getElementById('btnNuevoReporte').addEventListener('click', () => this.showModalReporte());
-        document.getElementById('btnAgregarHistorial').addEventListener('click', () => this.showModalHistorial());
-        
+        const btnNuevoReporte = document.getElementById('btnNuevoReporte');
+        if (btnNuevoReporte) {
+            btnNuevoReporte.addEventListener('click', () => this.showModalReporte());
+        }
+
+        const btnAgregarHistorial = document.getElementById('btnAgregarHistorial');
+        if (btnAgregarHistorial) {
+            btnAgregarHistorial.addEventListener('click', () => this.showModalHistorial());
+        }
+
         // Modal events
         document.querySelectorAll('.close').forEach(closeBtn => {
             closeBtn.addEventListener('click', () => this.hideModals());
         });
-        
-        document.getElementById('btnCancelar').addEventListener('click', () => this.hideModals());
-        document.getElementById('btnCancelarHistorial').addEventListener('click', () => this.hideModals());
-        document.getElementById('btnCancelarAccion').addEventListener('click', () => this.hideModals());
-        
+
+        // Botones de cancelar
+        const cancelButtons = ['btnCancelar', 'btnCancelarHistorial', 'btnCancelarAccion'];
+        cancelButtons.forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', () => this.hideModals());
+            }
+        });
+
         // Form events
-        document.getElementById('reporteForm').addEventListener('submit', (e) => this.guardarReporte(e));
-        document.getElementById('historialForm').addEventListener('submit', (e) => this.guardarHistorial(e));
-        
+        const reporteForm = document.getElementById('reporteForm');
+        if (reporteForm) {
+            reporteForm.addEventListener('submit', (e) => this.guardarReporte(e));
+        }
+
+        const historialForm = document.getElementById('historialForm');
+        if (historialForm) {
+            historialForm.addEventListener('submit', (e) => this.guardarHistorial(e));
+        }
+
         // Search
-        document.getElementById('searchInput').addEventListener('input', (e) => this.buscarReportes(e.target.value));
-        
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => this.buscarReportes(e.target.value));
+        }
+
         // Confirmación
-        document.getElementById('btnConfirmarAccion').addEventListener('click', () => this.confirmarAccion());
-        
+        const btnConfirmarAccion = document.getElementById('btnConfirmarAccion');
+        if (btnConfirmarAccion) {
+            btnConfirmarAccion.addEventListener('click', () => this.confirmarAccion());
+        }
+
         // Cerrar modal al hacer clic fuera
         window.addEventListener('click', (e) => {
             if (e.target.classList.contains('modal')) {
@@ -53,35 +79,64 @@ class BitacoraManager {
             }
         });
 
-        // Cambio en select de inquilino para cargar cuartos
-        document.getElementById('idInquilino').addEventListener('change', (e) => {
-            this.cargarCuartosPorInquilino(e.target.value);
-        });
-
         // Cambio en select de reporte para historial
-        document.getElementById('historialIdReporte').addEventListener('change', (e) => {
-            this.cargarDatosReporteParaHistorial(e.target.value);
-        });
+        const historialSelect = document.getElementById('historialIdReporte');
+        if (historialSelect) {
+            historialSelect.addEventListener('change', (e) => {
+                this.cargarDatosReporteParaHistorial(e.target.value);
+            });
+        }
+
+        // Cuando se cambia el inquilino, cargar sus cuartos (basado en contratos)
+        const idInquilinoSelect = document.getElementById('idInquilino');
+        if (idInquilinoSelect) {
+            idInquilinoSelect.addEventListener('change', (e) => {
+                this.cargarCuartosPorInquilino(e.target.value);
+            });
+        }
     }
 
     setupFilters() {
-        document.getElementById('filterEstado').addEventListener('change', () => this.aplicarFiltros());
-        document.getElementById('filterTipo').addEventListener('change', () => this.aplicarFiltros());
-        document.getElementById('filterInquilino').addEventListener('change', () => this.aplicarFiltros());
-        document.getElementById('filterFecha').addEventListener('change', () => this.aplicarFiltros());
+        const filters = ['filterEstado', 'filterTipo', 'filterInquilino', 'filterFecha'];
+        filters.forEach(filterId => {
+            const filter = document.getElementById(filterId);
+            if (filter) {
+                filter.addEventListener('change', () => this.aplicarFiltros());
+            }
+        });
+    }
+
+    async loadContratos() {
+        try {
+            console.log('Cargando contratos desde:', `${this.API_BASE}/contratos`);
+            const response = await fetch(`${this.API_BASE}/contratos`);
+
+            if (!response.ok) {
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log('Contratos recibidos:', data);
+            this.contratos = Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error:', error);
+            this.showError('Error al cargar los contratos: ' + error.message);
+        }
     }
 
     async loadReportes() {
         try {
             this.showLoading(true);
+            console.log('Cargando reportes desde:', `${this.API_BASE}/reportes-inquilinos`);
             const response = await fetch(`${this.API_BASE}/reportes-inquilinos`);
-            
+
             if (!response.ok) {
-                throw new Error('Error al cargar reportes');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
-            
-            this.reportes = await response.json();
-            console.log('Reportes cargados:', this.reportes);
+
+            const data = await response.json();
+            console.log('Reportes recibidos:', data);
+            this.reportes = Array.isArray(data) ? data : [];
             this.renderReportes();
             this.updateStats();
             this.populateReportesSelect();
@@ -96,19 +151,17 @@ class BitacoraManager {
     async loadHistorial(idReporte = null) {
         try {
             let url = `${this.API_BASE}/historial-reportes`;
-            if (idReporte) {
-                url = `${this.API_BASE}/historial-reportes/reporte/${idReporte}`;
-            }
             
             console.log('Cargando historial desde:', url);
             const response = await fetch(url);
-            
+
             if (!response.ok) {
-                throw new Error('Error al cargar historial');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
-            
-            this.historial = await response.json();
-            console.log('Historial cargado:', this.historial);
+
+            const data = await response.json();
+            console.log('Historial recibido:', data);
+            this.historial = Array.isArray(data) ? data : [];
             this.renderHistorial();
         } catch (error) {
             console.error('Error:', error);
@@ -118,97 +171,155 @@ class BitacoraManager {
 
     async loadInquilinos() {
         try {
-            const response = await fetch(`${this.API_BASE}/inquilinos`);
-            
+            console.log('Cargando inquilinos (usuarios rol 2) desde:', `${this.API_BASE}/usuarios/rol/2`);
+            const response = await fetch(`${this.API_BASE}/usuarios/rol/2`);
+
             if (!response.ok) {
-                throw new Error('Error al cargar inquilinos');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
+
+            const data = await response.json();
+            console.log('Inquilinos recibidos:', data);
+            this.inquilinos = Array.isArray(data) ? data : [];
             
-            this.inquilinos = await response.json();
-            this.populateSelect('idInquilino', this.inquilinos, 'nombreInquilino');
-            this.populateSelect('filterInquilino', this.inquilinos, 'nombreInquilino');
+            // Poblar selectores
+            this.populateInquilinosSelect('idInquilino');
+            this.populateInquilinosSelect('filterInquilino');
         } catch (error) {
             console.error('Error:', error);
-            this.showError('Error al cargar los inquilinos');
+            this.showError('Error al cargar los inquilinos: ' + error.message);
         }
     }
 
     async loadCuartos() {
         try {
+            console.log('Cargando cuartos desde:', `${this.API_BASE}/cuartos`);
             const response = await fetch(`${this.API_BASE}/cuartos`);
-            
+
             if (!response.ok) {
-                throw new Error('Error al cargar cuartos');
+                throw new Error(`Error ${response.status}: ${response.statusText}`);
             }
-            
-            this.cuartos = await response.json();
+
+            const data = await response.json();
+            console.log('Cuartos recibidos:', data);
+            this.cuartos = Array.isArray(data) ? data : [];
         } catch (error) {
             console.error('Error:', error);
-            this.showError('Error al cargar los cuartos');
+            this.showError('Error al cargar los cuartos: ' + error.message);
         }
     }
 
     async cargarCuartosPorInquilino(idInquilino) {
-        if (!idInquilino) {
-            this.populateSelect('idCuarto', [], 'nombreCuarto');
-            return;
-        }
-
         try {
-            this.populateSelect('idCuarto', this.cuartos, 'nombreCuarto');
+            if (!idInquilino) {
+                this.populateCuartosSelect([], 'idCuarto');
+                return;
+            }
+
+            // Buscar contratos activos donde el inquilino esté asociado a cuartos
+            const cuartosDelInquilino = [];
+            
+            // Opción 1: Buscar por contratos (la forma correcta)
+            const contratosInquilino = this.contratos.filter(contrato => 
+                contrato.idUsuario == idInquilino && 
+                contrato.estadoContrato === 'activo'
+            );
+            
+            contratosInquilino.forEach(contrato => {
+                // Encontrar el cuarto por su ID
+                const cuarto = this.cuartos.find(c => c.idCuarto == contrato.idCuarto);
+                if (cuarto) {
+                    cuartosDelInquilino.push(cuarto);
+                }
+            });
+            
+            // Si no hay cuartos por contrato, mostrar todos los cuartos disponibles
+            if (cuartosDelInquilino.length === 0) {
+                // Mostrar cuartos disponibles en general
+                cuartosDelInquilino.push(...this.cuartos.filter(cuarto => 
+                    cuarto.estadoCuarto === 'disponible' || cuarto.estadoCuarto === 'ocupado'
+                ));
+            }
+            
+            this.populateCuartosSelect(cuartosDelInquilino, 'idCuarto');
         } catch (error) {
             console.error('Error:', error);
-            this.showError('Error al cargar los cuartos del inquilino');
+            this.showError('Error al cargar cuartos del inquilino: ' + error.message);
         }
     }
 
-    populateSelect(selectId, data, labelField) {
+    populateInquilinosSelect(selectId) {
         const select = document.getElementById(selectId);
-        const currentValue = select.value;
-        
-        select.innerHTML = '<option value="">Seleccionar...</option>';
-        
-        data.forEach(item => {
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Seleccionar inquilino...</option>';
+
+        this.inquilinos.forEach(inquilino => {
             const option = document.createElement('option');
-            option.value = item.idInquilino || item.idCuarto;
-            option.textContent = item[labelField];
+            option.value = inquilino.idUsuario;
+            option.textContent = `${inquilino.username || inquilino.nombre || 'Inquilino ' + inquilino.idUsuario}`;
             select.appendChild(option);
         });
+    }
 
-        if (currentValue && data.some(item => (item.idInquilino || item.idCuarto) == currentValue)) {
-            select.value = currentValue;
+    populateCuartosSelect(cuartos, selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        select.innerHTML = '<option value="">Seleccionar cuarto...</option>';
+
+        if (cuartos.length === 0) {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "No hay cuartos disponibles";
+            option.disabled = true;
+            select.appendChild(option);
+            return;
         }
+
+        cuartos.forEach(cuarto => {
+            const option = document.createElement('option');
+            option.value = cuarto.idCuarto;
+            option.textContent = `${cuarto.nombreCuarto || 'Cuarto ' + cuarto.idCuarto} (${cuarto.estadoCuarto})`;
+            select.appendChild(option);
+        });
     }
 
     populateReportesSelect() {
         const select = document.getElementById('historialIdReporte');
+        if (!select) return;
+
         select.innerHTML = '<option value="">Seleccionar reporte...</option>';
-        
+
         this.reportes.forEach(reporte => {
             const option = document.createElement('option');
             option.value = reporte.idReporte;
-            option.textContent = `R-${reporte.idReporte.toString().padStart(3, '0')} - ${reporte.nombre || 'Sin nombre'} - ${this.getNombreInquilino(reporte.idInquilino)}`;
-            option.setAttribute('data-reporte', JSON.stringify(reporte));
+            option.textContent = `R-${reporte.idReporte} - ${reporte.nombre || 'Sin nombre'} (${this.getNombreInquilino(reporte.idInquilino)})`;
             select.appendChild(option);
         });
     }
 
     cargarDatosReporteParaHistorial(idReporte) {
+        const nombreReporteHist = document.getElementById('nombreReporteHist');
+        if (!nombreReporteHist) return;
+
         if (!idReporte) {
-            document.getElementById('nombreReporteHist').value = '';
+            nombreReporteHist.value = '';
+            this.currentReporte = null;
             return;
         }
 
         const reporte = this.reportes.find(r => r.idReporte == idReporte);
         if (reporte) {
-            document.getElementById('nombreReporteHist').value = reporte.nombre || '';
+            nombreReporteHist.value = reporte.nombre || 'Historial de reporte';
             this.currentReporte = reporte;
         }
     }
 
     renderReportes(reportes = this.reportes) {
         const tbody = document.getElementById('reportesTableBody');
-        
+        if (!tbody) return;
+
         if (reportes.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -224,49 +335,41 @@ class BitacoraManager {
         tbody.innerHTML = reportes.map(reporte => {
             const nombreInquilino = this.getNombreInquilino(reporte.idInquilino);
             const nombreCuarto = this.getNombreCuarto(reporte.idCuarto);
-            
+            const descripcion = reporte.descripcion || 'Sin descripción';
+            const descripcionCorta = descripcion.length > 100 ? 
+                descripcion.substring(0, 100) + '...' : descripcion;
+
             return `
-            <tr data-reporte-id="${reporte.idReporte}">
-                <td>R-${reporte.idReporte.toString().padStart(3, '0')}</td>
-                <td>${nombreInquilino}</td>
-                <td>${nombreCuarto}</td>
-                <td>${reporte.nombre || 'N/A'}</td>
-                <td>${this.getTipoText(reporte.tipo)}</td>
-                <td class="descripcion-truncada" title="${reporte.descripcion || ''}">${reporte.descripcion || 'Sin descripción'}</td>
-                <td>${this.formatDate(reporte.fecha)}</td>
-                <td>
-                    <span class="status-badge ${this.getStatusClass(reporte.estadoReporte)}">
-                        ${this.getStatusText(reporte.estadoReporte)}
-                    </span>
-                </td>
-                <td class="table-actions-cell">
-                    <button class="btn-action btn-edit" onclick="bitacoraManager.editarReporte(${reporte.idReporte})">
-                        <i class="fas fa-edit"></i> Editar
-                    </button>
-                    <button class="btn-action btn-delete" onclick="bitacoraManager.eliminarReporte(${reporte.idReporte})">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
-                </td>
-            </tr>
+                <tr data-reporte-id="${reporte.idReporte}">
+                    <td>R-${reporte.idReporte}</td>
+                    <td>${this.escapeHtml(nombreInquilino)}</td>
+                    <td>${this.escapeHtml(nombreCuarto)}</td>
+                    <td>${this.escapeHtml(reporte.nombre || 'N/A')}</td>
+                    <td>${this.getTipoText(reporte.tipo)}</td>
+                    <td title="${this.escapeHtml(descripcion)}">${this.escapeHtml(descripcionCorta)}</td>
+                    <td>${this.formatDate(reporte.fecha)}</td>
+                    <td>
+                        <span class="status-badge ${this.getStatusClass(reporte.estadoReporte)}">
+                            ${this.getStatusText(reporte.estadoReporte)}
+                        </span>
+                    </td>
+                    <td class="table-actions-cell">
+                        <button class="btn-action btn-edit" onclick="bitacoraManager.editarReporte(${reporte.idReporte})">
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <button class="btn-action btn-delete" onclick="bitacoraManager.eliminarReporte(${reporte.idReporte})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>
             `;
         }).join('');
     }
 
-    getNombreInquilino(idInquilino) {
-        if (!idInquilino) return 'N/A';
-        const inquilino = this.inquilinos.find(i => i.idInquilino === idInquilino);
-        return inquilino ? inquilino.nombreInquilino : `Inquilino ${idInquilino}`;
-    }
-
-    getNombreCuarto(idCuarto) {
-        if (!idCuarto) return 'N/A';
-        const cuarto = this.cuartos.find(c => c.idCuarto === idCuarto);
-        return cuarto ? cuarto.nombreCuarto : `Cuarto ${idCuarto}`;
-    }
-
     renderHistorial() {
         const tbody = document.getElementById('historialTableBody');
-        
+        if (!tbody) return;
+
         if (this.historial.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -280,85 +383,97 @@ class BitacoraManager {
         }
 
         tbody.innerHTML = this.historial.map(historial => {
-            console.log('Renderizando historial:', historial); // Debug
+            const descripcion = historial.descripcionHist || 'Sin descripción';
+            const descripcionCorta = descripcion.length > 100 ? 
+                descripcion.substring(0, 100) + '...' : descripcion;
+
             return `
-            <tr>
-                <td>${this.formatDateTime(historial.fechaRegistro)}</td>
-                <td>${historial.usuarioRegistro || 'Sistema'}</td>
-                <td>${this.getTipoHistorialText(historial.tipoReporteHist)}</td>
-                <td class="descripcion-truncada" title="${historial.descripcionHist || ''}">${historial.descripcionHist || 'Sin descripción'}</td>
-                <td class="table-actions-cell">
-                    <button class="btn-action btn-delete" onclick="bitacoraManager.eliminarHistorial(${historial.idHistorial})">
-                        <i class="fas fa-trash"></i> Eliminar
-                    </button>
-                </td>
-            </tr>
+                <tr>
+                    <td>${this.formatDateTime(historial.fechaRegistro)}</td>
+                    <td>${this.escapeHtml(historial.usuarioRegistro || 'Sistema')}</td>
+                    <td>${this.getTipoHistorialText(historial.tipoReporteHist)}</td>
+                    <td title="${this.escapeHtml(descripcion)}">${this.escapeHtml(descripcionCorta)}</td>
+                    <td class="table-actions-cell">
+                        <button class="btn-action btn-delete" onclick="bitacoraManager.eliminarHistorial(${historial.idHistorial})">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </td>
+                </tr>
             `;
         }).join('');
     }
 
+    // Métodos de utilidad
+    getNombreInquilino(idInquilino) {
+        if (!idInquilino) return 'N/A';
+        const inquilino = this.inquilinos.find(i => i.idUsuario === idInquilino);
+        return inquilino ? (inquilino.username || inquilino.nombre || `Inquilino ${idInquilino}`) : `Inquilino ${idInquilino}`;
+    }
+
+    getNombreCuarto(idCuarto) {
+        if (!idCuarto) return 'N/A';
+        const cuarto = this.cuartos.find(c => c.idCuarto === idCuarto);
+        return cuarto ? (cuarto.nombreCuarto || `Cuarto ${idCuarto}`) : `Cuarto ${idCuarto}`;
+    }
+
     getStatusClass(status) {
-        const statusMap = {
-            'PENDIENTE': 'status-pendiente',
-            'Pendiente': 'status-pendiente',
-            'EN_PROCESO': 'status-en-proceso',
-            'En Proceso': 'status-en-proceso',
-            'RESUELTO': 'status-resuelto',
-            'Resuelto': 'status-resuelto',
-            'CANCELADO': 'status-cancelado',
-            'Cancelado': 'status-cancelado'
-        };
-        return statusMap[status] || 'status-pendiente';
+        if (!status) return 'status-pendiente';
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('pendiente')) return 'status-pendiente';
+        if (statusLower.includes('proceso') || statusLower.includes('en proceso')) return 'status-en-proceso';
+        if (statusLower.includes('resuelto') || statusLower.includes('completado') || statusLower.includes('cerrado')) return 'status-resuelto';
+        if (statusLower.includes('cancelado')) return 'status-cancelado';
+        
+        return 'status-pendiente';
     }
 
     getStatusText(status) {
-        const statusMap = {
-            'PENDIENTE': 'Pendiente',
-            'Pendiente': 'Pendiente',
-            'EN_PROCESO': 'En Proceso',
-            'En Proceso': 'En Proceso',
-            'RESUELTO': 'Resuelto',
-            'Resuelto': 'Resuelto',
-            'CANCELADO': 'Cancelado',
-            'Cancelado': 'Cancelado'
-        };
-        return statusMap[status] || status;
+        if (!status) return 'Pendiente';
+        
+        const statusLower = status.toLowerCase();
+        if (statusLower.includes('pendiente')) return 'Pendiente';
+        if (statusLower.includes('proceso') || statusLower.includes('en proceso')) return 'En Proceso';
+        if (statusLower.includes('resuelto') || statusLower.includes('completado') || statusLower.includes('cerrado')) return 'Resuelto';
+        if (statusLower.includes('cancelado')) return 'Cancelado';
+        
+        return status;
     }
 
     getTipoText(tipo) {
-        const tipoMap = {
-            'MANTENIMIENTO': 'Mantenimiento',
-            'Mantenimiento': 'Mantenimiento',
-            'URGENTE': 'Urgente',
-            'Urgente': 'Urgente',
-            'QUEJA': 'Queja',
-            'Queja': 'Queja',
-            'SUGERENCIA': 'Sugerencia',
-            'Sugerencia': 'Sugerencia'
-        };
-        return tipoMap[tipo] || tipo;
+        if (!tipo) return 'General';
+        
+        const tipoLower = tipo.toLowerCase();
+        if (tipoLower.includes('mantenimiento')) return 'Mantenimiento';
+        if (tipoLower.includes('urgente')) return 'Urgente';
+        if (tipoLower.includes('queja')) return 'Queja';
+        if (tipoLower.includes('sugerencia')) return 'Sugerencia';
+        
+        return tipo;
     }
 
     getTipoHistorialText(tipo) {
-        const tipoMap = {
-            'ACTUALIZACION': 'Actualización',
-            'RESOLUCION': 'Resolución',
-            'CANCELACION': 'Cancelación',
-            'REVISION': 'Revisión'
-        };
-        return tipoMap[tipo] || tipo;
+        if (!tipo) return 'Actualización';
+        
+        const tipoLower = tipo.toLowerCase();
+        if (tipoLower.includes('actualizacion') || tipoLower.includes('actualización')) return 'Actualización';
+        if (tipoLower.includes('resolucion') || tipoLower.includes('resolución')) return 'Resolución';
+        if (tipoLower.includes('cancelacion') || tipoLower.includes('cancelación')) return 'Cancelación';
+        if (tipoLower.includes('revision') || tipoLower.includes('revisión')) return 'Revisión';
+        
+        return tipo;
     }
 
     updateStats() {
         const total = this.reportes.length;
         const pendientes = this.reportes.filter(r => 
-            r.estadoReporte === 'PENDIENTE' || r.estadoReporte === 'Pendiente'
+            this.getStatusText(r.estadoReporte) === 'Pendiente'
         ).length;
         const resueltos = this.reportes.filter(r => 
-            r.estadoReporte === 'RESUELTO' || r.estadoReporte === 'Resuelto'
+            this.getStatusText(r.estadoReporte) === 'Resuelto'
         ).length;
         const cancelados = this.reportes.filter(r => 
-            r.estadoReporte === 'CANCELADO' || r.estadoReporte === 'Cancelado'
+            this.getStatusText(r.estadoReporte) === 'Cancelado'
         ).length;
 
         document.getElementById('totalReportes').textContent = total;
@@ -377,20 +492,13 @@ class BitacoraManager {
 
         if (estado) {
             reportesFiltrados = reportesFiltrados.filter(r => 
-                r.estadoReporte === estado || 
-                (estado === 'PENDIENTE' && r.estadoReporte === 'Pendiente') ||
-                (estado === 'RESUELTO' && r.estadoReporte === 'Resuelto') ||
-                (estado === 'CANCELADO' && r.estadoReporte === 'Cancelado')
+                this.getStatusText(r.estadoReporte) === estado
             );
         }
 
         if (tipo) {
             reportesFiltrados = reportesFiltrados.filter(r => 
-                r.tipo === tipo ||
-                (tipo === 'MANTENIMIENTO' && r.tipo === 'Mantenimiento') ||
-                (tipo === 'URGENTE' && r.tipo === 'Urgente') ||
-                (tipo === 'QUEJA' && r.tipo === 'Queja') ||
-                (tipo === 'SUGERENCIA' && r.tipo === 'Sugerencia')
+                r.tipo && r.tipo.toUpperCase() === tipo.toUpperCase()
             );
         }
 
@@ -423,7 +531,7 @@ class BitacoraManager {
                 (reporte.nombre && reporte.nombre.toLowerCase().includes(searchText)) ||
                 (reporte.tipo && reporte.tipo.toLowerCase().includes(searchText)) ||
                 (reporte.descripcion && reporte.descripcion.toLowerCase().includes(searchText)) ||
-                (reporte.estadoReporte && reporte.estadoReporte.toLowerCase().includes(searchText))
+                this.getStatusText(reporte.estadoReporte).toLowerCase().includes(searchText)
             );
         });
 
@@ -436,15 +544,21 @@ class BitacoraManager {
         const title = document.getElementById('modalTitle');
         const form = document.getElementById('reporteForm');
 
+        if (!modal || !title || !form) return;
+
         if (reporte) {
             title.textContent = 'Editar Reporte';
             this.populateFormReporte(reporte);
         } else {
             title.textContent = 'Nuevo Reporte';
             form.reset();
-            const hoy = new Date().toISOString().split('T')[0];
-            document.getElementById('fecha').value = hoy;
-            document.getElementById('estadoReporte').value = 'Pendiente';
+            // Establecer fecha actual por defecto
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('fecha').value = today;
+            // Establecer estado por defecto
+            document.getElementById('estadoReporte').value = 'PENDIENTE';
+            // Limpiar cuarto
+            document.getElementById('idCuarto').innerHTML = '<option value="">Seleccionar inquilino primero...</option>';
         }
 
         modal.style.display = 'block';
@@ -453,6 +567,8 @@ class BitacoraManager {
     showModalHistorial() {
         const modal = document.getElementById('modalHistorial');
         const form = document.getElementById('historialForm');
+
+        if (!modal || !form) return;
 
         document.getElementById('modalHistorialTitle').textContent = 'Agregar al Historial';
         form.reset();
@@ -470,25 +586,20 @@ class BitacoraManager {
     }
 
     populateFormReporte(reporte) {
-        console.log('Populando formulario con:', reporte);
-        
         document.getElementById('idInquilino').value = reporte.idInquilino || '';
-        
-        this.cargarCuartosPorInquilino(reporte.idInquilino).then(() => {
-            document.getElementById('idCuarto').value = reporte.idCuarto || '';
-        });
-        
+        // Cargar cuartos del inquilino seleccionado
+        if (reporte.idInquilino) {
+            this.cargarCuartosPorInquilino(reporte.idInquilino);
+            // Esperar un momento para que se carguen los cuartos
+            setTimeout(() => {
+                document.getElementById('idCuarto').value = reporte.idCuarto || '';
+            }, 100);
+        }
         document.getElementById('nombre').value = reporte.nombre || '';
         document.getElementById('tipo').value = reporte.tipo || '';
         document.getElementById('descripcion').value = reporte.descripcion || '';
         document.getElementById('fecha').value = reporte.fecha || '';
-        
-        let estadoNormalizado = reporte.estadoReporte;
-        if (estadoNormalizado === 'Pendiente') estadoNormalizado = 'PENDIENTE';
-        if (estadoNormalizado === 'Resuelto') estadoNormalizado = 'RESUELTO';
-        if (estadoNormalizado === 'Cancelado') estadoNormalizado = 'CANCELADO';
-        
-        document.getElementById('estadoReporte').value = estadoNormalizado || 'PENDIENTE';
+        document.getElementById('estadoReporte').value = reporte.estadoReporte || 'PENDIENTE';
     }
 
     async guardarReporte(e) {
@@ -499,61 +610,63 @@ class BitacoraManager {
             
             const formData = new FormData(e.target);
             
+            // Construir objeto según lo que espera la API
             const reporteData = {
                 idInquilino: parseInt(formData.get('idInquilino')),
-                idCuarto: formData.get('idCuarto') ? parseInt(formData.get('idCuarto')) : null,
                 nombre: formData.get('nombre'),
                 tipo: formData.get('tipo'),
                 descripcion: formData.get('descripcion'),
                 fecha: formData.get('fecha'),
+                idCuarto: parseInt(formData.get('idCuarto')),
                 estadoReporte: formData.get('estadoReporte')
             };
 
             console.log('Enviando datos del reporte:', reporteData);
 
-            let response;
-            if (this.currentReporte) {
-                response = await fetch(`${this.API_BASE}/reportes-inquilinos/${this.currentReporte.idReporte}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(reporteData)
-                });
-            } else {
-                response = await fetch(`${this.API_BASE}/reportes-inquilinos`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(reporteData)
-                });
+            let url = `${this.API_BASE}/reportes-inquilinos`;
+            let method = 'POST';
+
+            if (this.currentReporte && this.currentReporte.idReporte) {
+                url = `${this.API_BASE}/reportes-inquilinos/${this.currentReporte.idReporte}`;
+                method = 'PUT';
             }
 
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(reporteData)
+            });
+
+            console.log('Respuesta status:', response.status);
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                let errorMessage = 'Error al guardar el reporte';
+                // Guardar el texto de error antes de intentar leer JSON
+                let errorText = await response.text();
+                let errorMessage = `Error ${response.status}: `;
                 
                 try {
+                    // Intentar parsear como JSON
                     const errorData = JSON.parse(errorText);
-                    errorMessage = errorData.message || errorData;
-                } catch {
-                    errorMessage = errorText || 'Error al guardar el reporte';
+                    errorMessage += errorData.message || errorData.error || errorText;
+                } catch (jsonError) {
+                    // Si no es JSON, usar el texto plano
+                    errorMessage += errorText || 'Error desconocido';
                 }
-                
                 throw new Error(errorMessage);
             }
 
-            const savedReporte = await response.json();
-            console.log('Reporte guardado:', savedReporte);
-            
+            const responseData = await response.json();
+            console.log('Respuesta exitosa:', responseData);
+
             this.showSuccess(`Reporte ${this.currentReporte ? 'actualizado' : 'creado'} correctamente`);
             this.hideModals();
-            this.loadReportes();
+            await this.loadReportes();
 
         } catch (error) {
             console.error('Error:', error);
-            this.showError(error.message);
+            this.showError(error.message || 'Error al guardar el reporte');
         } finally {
             this.showLoading(false, 'btnGuardar');
         }
@@ -572,6 +685,7 @@ class BitacoraManager {
                 throw new Error('Debe seleccionar un reporte');
             }
 
+            // Construir objeto según lo que espera la API
             const historialData = {
                 idReporte: idReporte,
                 nombreReporteHist: formData.get('nombreReporteHist'),
@@ -590,32 +704,34 @@ class BitacoraManager {
                 body: JSON.stringify(historialData)
             });
 
+            console.log('Respuesta status:', response.status);
+            
             if (!response.ok) {
-                const errorText = await response.text();
-                let errorMessage = 'Error al guardar el historial';
+                // Guardar el texto de error antes de intentar leer JSON
+                let errorText = await response.text();
+                let errorMessage = `Error ${response.status}: `;
                 
                 try {
+                    // Intentar parsear como JSON
                     const errorData = JSON.parse(errorText);
-                    errorMessage = errorData.message || errorData;
-                } catch {
-                    errorMessage = errorText || 'Error al guardar el historial';
+                    errorMessage += errorData.message || errorData.error || errorText;
+                } catch (jsonError) {
+                    // Si no es JSON, usar el texto plano
+                    errorMessage += errorText || 'Error desconocido';
                 }
-                
                 throw new Error(errorMessage);
             }
 
-            const savedHistorial = await response.json();
-            console.log('Historial guardado:', savedHistorial);
-            
+            const responseData = await response.json();
+            console.log('Historial guardado:', responseData);
+
             this.showSuccess('Historial agregado correctamente');
             this.hideModals();
-            
-            // Recargar el historial completo
-            this.loadHistorial();
+            await this.loadHistorial();
 
         } catch (error) {
             console.error('Error:', error);
-            this.showError(error.message);
+            this.showError(error.message || 'Error al guardar el historial');
         } finally {
             this.showLoading(false, 'btnGuardarHistorial');
         }
@@ -632,7 +748,7 @@ class BitacoraManager {
         const reporte = this.reportes.find(r => r.idReporte === id);
         if (reporte) {
             this.currentReporte = reporte;
-            const mensaje = `¿Estás seguro de eliminar el reporte R-${reporte.idReporte.toString().padStart(3, '0')}?`;
+            const mensaje = `¿Estás seguro de eliminar el reporte R-${reporte.idReporte}?`;
             this.showConfirmModal(mensaje, 'eliminarReporte');
         }
     }
@@ -650,8 +766,10 @@ class BitacoraManager {
         this.currentAction = action;
         const modal = document.getElementById('modalConfirmacion');
         const messageElement = document.getElementById('confirmacionMensaje');
-        messageElement.textContent = message;
-        modal.style.display = 'block';
+        if (modal && messageElement) {
+            messageElement.textContent = message;
+            modal.style.display = 'block';
+        }
     }
 
     async confirmarAccion() {
@@ -659,37 +777,66 @@ class BitacoraManager {
             this.showLoading(true, 'btnConfirmarAccion');
             
             if (this.currentAction === 'eliminarReporte' && this.currentReporte) {
+                console.log('Eliminando reporte:', this.currentReporte.idReporte);
+                
                 const response = await fetch(`${this.API_BASE}/reportes-inquilinos/${this.currentReporte.idReporte}`, {
                     method: 'DELETE'
                 });
 
+                console.log('Respuesta delete:', response.status);
+                
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Error al eliminar el reporte');
+                    // Guardar el texto de error antes de intentar leer JSON
+                    let errorText = await response.text();
+                    let errorMessage = `Error ${response.status}: `;
+                    
+                    try {
+                        // Intentar parsear como JSON
+                        const errorData = JSON.parse(errorText);
+                        errorMessage += errorData.message || errorData.error || errorText;
+                    } catch (jsonError) {
+                        // Si no es JSON, usar el texto plano
+                        errorMessage += errorText || 'Error desconocido';
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 this.showSuccess('Reporte eliminado correctamente');
                 this.hideModals();
-                this.loadReportes();
+                await this.loadReportes();
                 
             } else if (this.currentAction === 'eliminarHistorial' && this.currentHistorial) {
+                console.log('Eliminando historial:', this.currentHistorial.idHistorial);
+                
                 const response = await fetch(`${this.API_BASE}/historial-reportes/${this.currentHistorial.idHistorial}`, {
                     method: 'DELETE'
                 });
 
+                console.log('Respuesta delete:', response.status);
+                
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Error al eliminar el historial');
+                    // Guardar el texto de error antes de intentar leer JSON
+                    let errorText = await response.text();
+                    let errorMessage = `Error ${response.status}: `;
+                    
+                    try {
+                        // Intentar parsear como JSON
+                        const errorData = JSON.parse(errorText);
+                        errorMessage += errorData.message || errorData.error || errorText;
+                    } catch (jsonError) {
+                        // Si no es JSON, usar el texto plano
+                        errorMessage += errorText || 'Error desconocido';
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 this.showSuccess('Registro de historial eliminado correctamente');
                 this.hideModals();
-                // Recargar el historial completo
-                this.loadHistorial();
+                await this.loadHistorial();
             }
         } catch (error) {
             console.error('Error:', error);
-            this.showError('Error al eliminar: ' + error.message);
+            this.showError(error.message || 'Error al eliminar');
         } finally {
             this.showLoading(false, 'btnConfirmarAccion');
         }
@@ -708,9 +855,13 @@ class BitacoraManager {
         if (!dateString) return 'N/A';
         try {
             const date = new Date(dateString);
-            return date.toLocaleDateString('es-ES');
-        } catch (error) {
-            console.error('Error formateando fecha:', dateString, error);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (e) {
+            console.error('Error formateando fecha:', dateString, e);
             return dateString;
         }
     }
@@ -719,9 +870,15 @@ class BitacoraManager {
         if (!dateTimeString) return 'N/A';
         try {
             const date = new Date(dateTimeString);
-            return date.toLocaleString('es-ES');
-        } catch (error) {
-            console.error('Error formateando fecha/hora:', dateTimeString, error);
+            return date.toLocaleString('es-ES', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            console.error('Error formateando fecha/hora:', dateTimeString, e);
             return dateTimeString;
         }
     }
@@ -729,17 +886,39 @@ class BitacoraManager {
     showLoading(show, buttonId = null) {
         if (buttonId) {
             const button = document.getElementById(buttonId);
-            if (show) {
-                button.disabled = true;
-                button.innerHTML = '<span class="spinner"></span> Procesando...';
-            } else {
-                button.disabled = false;
-                if (buttonId === 'btnGuardar') {
-                    button.textContent = this.currentReporte ? 'Actualizar Reporte' : 'Guardar Reporte';
-                } else if (buttonId === 'btnGuardarHistorial') {
-                    button.textContent = 'Guardar Historial';
-                } else if (buttonId === 'btnConfirmarAccion') {
-                    button.textContent = 'Confirmar';
+            if (button) {
+                if (show) {
+                    button.disabled = true;
+                    const buttonText = button.querySelector('.button-text');
+                    if (buttonText) {
+                        buttonText.innerHTML = '<span class="spinner"></span> Procesando...';
+                    } else {
+                        button.innerHTML = '<span class="spinner"></span> Procesando...';
+                    }
+                } else {
+                    button.disabled = false;
+                    if (buttonId === 'btnGuardar') {
+                        const buttonText = button.querySelector('.button-text');
+                        if (buttonText) {
+                            buttonText.textContent = this.currentReporte ? 'Actualizar Reporte' : 'Guardar Reporte';
+                        } else {
+                            button.textContent = this.currentReporte ? 'Actualizar Reporte' : 'Guardar Reporte';
+                        }
+                    } else if (buttonId === 'btnGuardarHistorial') {
+                        const buttonText = button.querySelector('.button-text');
+                        if (buttonText) {
+                            buttonText.textContent = 'Guardar Historial';
+                        } else {
+                            button.textContent = 'Guardar Historial';
+                        }
+                    } else if (buttonId === 'btnConfirmarAccion') {
+                        const buttonText = button.querySelector('.button-text');
+                        if (buttonText) {
+                            buttonText.textContent = 'Confirmar';
+                        } else {
+                            button.textContent = 'Confirmar';
+                        }
+                    }
                 }
             }
         }
@@ -754,6 +933,9 @@ class BitacoraManager {
     }
 
     showNotification(message, type) {
+        // Eliminar notificaciones existentes
+        document.querySelectorAll('.notification').forEach(notif => notif.remove());
+
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
         notification.style.cssText = `
@@ -761,12 +943,14 @@ class BitacoraManager {
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: ${type === 'success' ? 'var(--success)' : 'var(--danger)'};
+            background: ${type === 'success' ? '#28a745' : '#dc3545'};
             color: white;
             border-radius: 6px;
-            box-shadow: var(--shadow);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 10000;
             animation: slideInRight 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
         `;
         notification.textContent = message;
 
@@ -779,7 +963,18 @@ class BitacoraManager {
                     document.body.removeChild(notification);
                 }
             }, 300);
-        }, 3000);
+        }, 4000);
+    }
+
+    escapeHtml(unsafe) {
+        if (!unsafe) return '';
+        return unsafe
+            .toString()
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 }
 
@@ -787,37 +982,3 @@ class BitacoraManager {
 document.addEventListener('DOMContentLoaded', () => {
     window.bitacoraManager = new BitacoraManager();
 });
-
-// Agregar estilos CSS para las animaciones de notificación
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideInRight {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOutRight {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
-    .descripcion-truncada {
-        max-width: 200px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-`;
-document.head.appendChild(style);

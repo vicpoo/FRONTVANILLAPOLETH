@@ -1,8 +1,10 @@
 // perfil.js
+// perfil.js
 document.addEventListener('DOMContentLoaded', function() {
     const API_BASE_URL = 'http://localhost:8000/api';
     let userData = null;
     let authToken = null;
+    let tokenClaims = null;
 
     // Elementos del DOM
     const elements = {
@@ -17,23 +19,25 @@ document.addEventListener('DOMContentLoaded', function() {
         profileEmail: document.getElementById('profileEmail'),
         
         // Estadísticas
-        statContratos: document.getElementById('statContratos'),
-        statPagos: document.getElementById('statPagos'),
-        statActivo: document.getElementById('statActivo'),
+        statUsuarioId: document.getElementById('statUsuarioId'),
+        statEstado: document.getElementById('statEstado'),
+        statRolId: document.getElementById('statRolId'),
         
         // Información personal
         infoUsername: document.getElementById('infoUsername'),
-        infoUserType: document.getElementById('infoUserType'),
+        infoEmail: document.getElementById('infoEmail'),
         infoRole: document.getElementById('infoRole'),
         infoCreatedAt: document.getElementById('infoCreatedAt'),
         
+        // Información del sistema
+        systemUserId: document.getElementById('systemUserId'),
+        systemUserStatus: document.getElementById('systemUserStatus'),
+        systemRoleId: document.getElementById('systemRoleId'),
+        systemRoleName: document.getElementById('systemRoleName'),
+        
         // Información de contacto
         infoPhone: document.getElementById('infoPhone'),
-        infoAddress: document.getElementById('infoAddress'),
-        infoAdditional: document.getElementById('infoAdditional'),
-        
-        // Información específica
-        specificInfoContent: document.getElementById('specificInfoContent'),
+        infoContactEmail: document.getElementById('infoContactEmail'),
         
         // Modal de sesión
         sessionModal: document.getElementById('sessionModal'),
@@ -41,6 +45,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Información de sesión
         sessionUsername: document.getElementById('sessionUsername'),
         sessionRole: document.getElementById('sessionRole'),
+        sessionEmail: document.getElementById('sessionEmail'),
         sessionTokenTime: document.getElementById('sessionTokenTime'),
         sessionExpires: document.getElementById('sessionExpires')
     };
@@ -51,20 +56,39 @@ document.addEventListener('DOMContentLoaded', function() {
     async function init() {
         // Verificar autenticación
         authToken = localStorage.getItem('authToken');
-        const storedUserData = localStorage.getItem('userData');
 
-        if (!authToken || !storedUserData) {
+        if (!authToken) {
             redirectToLogin();
             return;
         }
 
         try {
-            userData = JSON.parse(storedUserData);
+            // Decodificar token JWT
+            tokenClaims = decodeJWT(authToken);
+            console.log('Token claims:', tokenClaims);
+
+            // Cargar datos del usuario desde la API
             await loadUserProfile();
             setupEventListeners();
         } catch (error) {
             console.error('Error inicializando perfil:', error);
-            showError('Error al cargar el perfil');
+            showError('Error al cargar el perfil. Por favor inicia sesión nuevamente.');
+            setTimeout(() => redirectToLogin(), 2000);
+        }
+    }
+
+    function decodeJWT(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Error decodificando JWT:', e);
+            throw new Error('Token inválido');
         }
     }
 
@@ -72,273 +96,86 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             setLoadingState(true);
             
-            // Cargar datos básicos del usuario
-            displayBasicUserInfo();
+            // Obtener ID del usuario desde el token
+            const userId = tokenClaims.id;
             
-            // Cargar información específica según el tipo de usuario
-            await loadSpecificUserInfo();
-            
-            // Cargar información adicional si está disponible
-            await loadAdditionalUserInfo();
-            
-            // Cargar estadísticas
-            await loadUserStats();
+            if (!userId) {
+                throw new Error('No se pudo obtener el ID del usuario del token');
+            }
+
+            // Obtener datos completos del usuario desde la API
+            const response = await fetch(`${API_BASE_URL}/usuarios/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    throw new Error('Sesión expirada');
+                }
+                throw new Error('Error al cargar los datos del usuario');
+            }
+
+            userData = await response.json();
+            console.log('Datos del usuario:', userData);
+
+            // Mostrar información del usuario
+            displayUserInfo();
             
         } catch (error) {
             console.error('Error cargando perfil:', error);
             showError('Error al cargar la información del perfil');
+            
+            // Si el error es de autenticación, redirigir al login
+            if (error.message.includes('Sesión expirada') || error.message.includes('Token')) {
+                setTimeout(() => redirectToLogin(), 2000);
+            }
         } finally {
             setLoadingState(false);
         }
     }
 
-    function displayBasicUserInfo() {
+    function displayUserInfo() {
         if (!userData) return;
 
-        const { usuario, rol, propietario, inquilino, invitado, createdAt } = userData;
+        // Información básica del header
+        const username = userData.username || tokenClaims.sub || 'Usuario';
+        const email = userData.email || tokenClaims.email || 'No disponible';
+        const roleName = userData.rol?.titulo || tokenClaims.rol || 'Sin rol';
+
+        // Avatar
+        elements.avatarInitials.textContent = getInitials(username);
         
-        // Información básica
-        elements.avatarInitials.textContent = getInitials(usuario);
-        elements.profileName.textContent = formatUsername(usuario);
-        elements.profileRole.textContent = rol?.nombreRol || 'Sin rol';
-        elements.profileEmail.textContent = usuario;
+        // Header del perfil
+        elements.profileName.textContent = formatUsername(username);
+        elements.profileRole.textContent = roleName;
+        elements.profileEmail.textContent = email;
         
-        // Información personal
-        elements.infoUsername.textContent = usuario;
-        elements.infoUserType.textContent = getUserType(propietario, inquilino, invitado);
-        elements.infoRole.textContent = rol?.nombreRol || 'No especificado';
-        elements.infoCreatedAt.textContent = formatDate(createdAt);
+        // Estadísticas en el header
+        elements.statUsuarioId.textContent = userData.idUsuario || tokenClaims.id || '-';
+        elements.statEstado.textContent = userData.estadoUsuario || 'Activo';
+        elements.statRolId.textContent = userData.rol?.idRoles || tokenClaims.rolId || '-';
+        
+        // Información Personal
+        elements.infoUsername.textContent = username;
+        elements.infoEmail.textContent = email;
+        elements.infoRole.textContent = roleName;
+        elements.infoCreatedAt.textContent = formatDate(userData.createdAt);
+        
+        // Información del Sistema
+        elements.systemUserId.textContent = userData.idUsuario || '-';
+        elements.systemUserStatus.textContent = userData.estadoUsuario || 'Activo';
+        elements.systemRoleId.textContent = userData.rol?.idRoles || '-';
+        elements.systemRoleName.textContent = roleName;
+        
+        // Información de Contacto
+        elements.infoPhone.textContent = userData.telefono || 'No especificado';
+        elements.infoContactEmail.textContent = email;
         
         // Aplicar estilos según el rol
-        applyRoleStyles(rol?.idRol);
-    }
-
-    async function loadSpecificUserInfo() {
-        if (!userData) return;
-
-        const { propietario, inquilino, invitado } = userData;
-        
-        try {
-            if (propietario) {
-                await loadPropietarioInfo(propietario.idPropietario);
-            } else if (inquilino) {
-                await loadInquilinoInfo(inquilino.idInquilino);
-            } else if (invitado) {
-                await loadInvitadoInfo(invitado.idInvitado);
-            } else {
-                showGenericUserInfo();
-            }
-        } catch (error) {
-            console.error('Error cargando información específica:', error);
-            elements.specificInfoContent.innerHTML = '<p class="error">Error al cargar información específica</p>';
-        }
-    }
-
-    async function loadPropietarioInfo(propietarioId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/propietarios/${propietarioId}`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const propietario = await response.json();
-                displayPropietarioInfo(propietario);
-            } else {
-                throw new Error('Error al cargar información del propietario');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            elements.specificInfoContent.innerHTML = `
-                <div class="info-grid">
-                    <div class="info-item">
-                        <label>Tipo</label>
-                        <p>Propietario</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Información</label>
-                        <p>No se pudo cargar la información detallada</p>
-                    </div>
-                </div>
-            `;
-        }
-    }
-
-    async function loadInquilinoInfo(inquilinoId) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/inquilinos/${inquilinoId}`, {
-                headers: {
-                    'Authorization': `Bearer ${authToken}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const inquilino = await response.json();
-                displayInquilinoInfo(inquilino);
-            } else {
-                throw new Error('Error al cargar información del inquilino');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            elements.specificInfoContent.innerHTML = `
-                <div class="info-grid">
-                    <div class="info-item">
-                        <label>Tipo</label>
-                        <p>Inquilino</p>
-                    </div>
-                    <div class="info-item">
-                        <label>Información</label>
-                        <p>No se pudo cargar la información detallada</p>
-                    </div>
-                </div>
-            `;
-        }
-    }
-
-    async function loadInvitadoInfo(invitadoId) {
-        elements.specificInfoContent.innerHTML = `
-            <div class="info-grid">
-                <div class="info-item">
-                    <label>Tipo</label>
-                    <p>Invitado</p>
-                </div>
-                <div class="info-item">
-                    <label>Acceso</label>
-                    <p>Usuario invitado con acceso limitado</p>
-                </div>
-            </div>
-        `;
-    }
-
-    function displayPropietarioInfo(propietario) {
-        const html = `
-            <div class="info-grid">
-                <div class="info-item">
-                    <label>Tipo de Usuario</label>
-                    <p>Propietario</p>
-                </div>
-                <div class="info-item">
-                    <label>ID Propietario</label>
-                    <p>${propietario.idPropietario || 'N/A'}</p>
-                </div>
-                <div class="info-item">
-                    <label>Estado</label>
-                    <p>${propietario.estado || 'Activo'}</p>
-                </div>
-                <div class="info-item full-width">
-                    <label>Propiedades</label>
-                    <p>${propietario.cantidadPropiedades || '0'} propiedades registradas</p>
-                </div>
-            </div>
-        `;
-        elements.specificInfoContent.innerHTML = html;
-        
-        // Actualizar información de contacto si está disponible
-        if (propietario.telefono) {
-            elements.infoPhone.textContent = propietario.telefono;
-        }
-        if (propietario.direccion) {
-            elements.infoAddress.textContent = propietario.direccion;
-        }
-    }
-
-    function displayInquilinoInfo(inquilino) {
-        const html = `
-            <div class="info-grid">
-                <div class="info-item">
-                    <label>Tipo de Usuario</label>
-                    <p>Inquilino</p>
-                </div>
-                <div class="info-item">
-                    <label>ID Inquilino</label>
-                    <p>${inquilino.idInquilino || 'N/A'}</p>
-                </div>
-                <div class="info-item">
-                    <label>Estado</label>
-                    <p>${inquilino.estado || 'Activo'}</p>
-                </div>
-                <div class="info-item">
-                    <label>Contrato Activo</label>
-                    <p>${inquilino.contratoActivo ? 'Sí' : 'No'}</p>
-                </div>
-            </div>
-        `;
-        elements.specificInfoContent.innerHTML = html;
-        
-        // Actualizar información de contacto si está disponible
-        if (inquilino.telefono) {
-            elements.infoPhone.textContent = inquilino.telefono;
-        }
-        if (inquilino.direccion) {
-            elements.infoAddress.textContent = inquilino.direccion;
-        }
-    }
-
-    function showGenericUserInfo() {
-        elements.specificInfoContent.innerHTML = `
-            <div class="info-grid">
-                <div class="info-item">
-                    <label>Tipo de Usuario</label>
-                    <p>Usuario del Sistema</p>
-                </div>
-                <div class="info-item full-width">
-                    <label>Descripción</label>
-                    <p>Usuario con acceso general al sistema</p>
-                </div>
-            </div>
-        `;
-    }
-
-    async function loadUserStats() {
-        try {
-            // Cargar estadísticas reales desde la API
-            const [contratosResponse, pagosResponse] = await Promise.all([
-                fetch(`${API_BASE_URL}/contratos/count`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                }),
-                fetch(`${API_BASE_URL}/pagos/count`, {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                })
-            ]);
-
-            let contratosCount = 0;
-            let pagosCount = 0;
-
-            if (contratosResponse.ok) {
-                const data = await contratosResponse.json();
-                contratosCount = data.count || 0;
-            }
-
-            if (pagosResponse.ok) {
-                const data = await pagosResponse.json();
-                pagosCount = data.count || 0;
-            }
-
-            elements.statContratos.textContent = contratosCount;
-            elements.statPagos.textContent = pagosCount;
-            elements.statActivo.textContent = 'Sí';
-
-        } catch (error) {
-            console.error('Error cargando estadísticas:', error);
-            // Valores por defecto en caso de error
-            elements.statContratos.textContent = '0';
-            elements.statPagos.textContent = '0';
-            elements.statActivo.textContent = 'Sí';
-        }
-    }
-
-    async function loadAdditionalUserInfo() {
-        // Aquí puedes cargar información adicional de otras APIs si es necesario
-        console.log('Cargando información adicional del usuario...');
+        applyRoleStyles(userData.rol?.idRoles || tokenClaims.rolId);
     }
 
     function setupEventListeners() {
@@ -366,59 +203,104 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         });
+
+        // Cerrar modal con tecla ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.style.display = 'none';
+                });
+            }
+        });
     }
 
     function handleLogout() {
         if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
             localStorage.removeItem('authToken');
             localStorage.removeItem('userData');
-            redirectToLogin();
+            showNotification('Sesión cerrada exitosamente', 'success');
+            setTimeout(() => redirectToLogin(), 1000);
         }
     }
 
     function showSessionInfo() {
-        if (userData) {
-            elements.sessionUsername.textContent = userData.usuario;
-            elements.sessionRole.textContent = userData.rol?.nombreRol || 'No especificado';
-            elements.sessionTokenTime.textContent = new Date().toLocaleString();
+        if (tokenClaims) {
+            // Información de la sesión desde el token
+            elements.sessionUsername.textContent = tokenClaims.sub || 'No disponible';
+            elements.sessionRole.textContent = tokenClaims.rol || 'No disponible';
+            elements.sessionEmail.textContent = tokenClaims.email || 'No disponible';
             
-            // Calcular expiración (24 horas desde ahora)
-            const expiration = new Date(Date.now() + 24 * 60 * 60 * 1000);
-            elements.sessionExpires.textContent = expiration.toLocaleString();
+            // Fecha de emisión del token (iat)
+            if (tokenClaims.iat) {
+                const issuedDate = new Date(tokenClaims.iat * 1000);
+                elements.sessionTokenTime.textContent = issuedDate.toLocaleString('es-ES');
+            } else {
+                elements.sessionTokenTime.textContent = 'No disponible';
+            }
+            
+            // Fecha de expiración del token (exp)
+            if (tokenClaims.exp) {
+                const expirationDate = new Date(tokenClaims.exp * 1000);
+                elements.sessionExpires.textContent = expirationDate.toLocaleString('es-ES');
+                
+                // Mostrar tiempo restante
+                const now = new Date();
+                const timeLeft = expirationDate - now;
+                
+                if (timeLeft > 0) {
+                    const hoursLeft = Math.floor(timeLeft / (1000 * 60 * 60));
+                    const minutesLeft = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                    elements.sessionExpires.textContent += ` (${hoursLeft}h ${minutesLeft}m restantes)`;
+                } else {
+                    elements.sessionExpires.textContent += ' (EXPIRADO)';
+                    showError('Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+                }
+            } else {
+                elements.sessionExpires.textContent = 'No disponible';
+            }
         }
         elements.sessionModal.style.display = 'block';
     }
 
     // Utilidades
     function getInitials(username) {
-        return username ? username.substring(0, 2).toUpperCase() : 'US';
+        if (!username) return 'US';
+        const words = username.trim().split(' ');
+        if (words.length >= 2) {
+            return (words[0][0] + words[1][0]).toUpperCase();
+        }
+        return username.substring(0, 2).toUpperCase();
     }
 
     function formatUsername(username) {
-        return username ? username.charAt(0).toUpperCase() + username.slice(1) : 'Usuario';
-    }
-
-    function getUserType(propietario, inquilino, invitado) {
-        if (propietario) return 'Propietario';
-        if (inquilino) return 'Inquilino';
-        if (invitado) return 'Invitado';
-        return 'Usuario del Sistema';
+        if (!username) return 'Usuario';
+        return username.split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
     }
 
     function formatDate(dateString) {
         if (!dateString) return 'No disponible';
-        return new Date(dateString).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
+        try {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (e) {
+            return 'Fecha inválida';
+        }
     }
 
     function applyRoleStyles(roleId) {
         const roleBadge = elements.profileRole;
-        roleBadge.className = 'profile-role ';
+        roleBadge.className = 'profile-role';
         
-        switch(roleId) {
+        // Aplicar estilos según el ID del rol
+        switch(Number(roleId)) {
             case 1:
                 roleBadge.classList.add('badge-administrador');
                 break;
@@ -435,9 +317,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setLoadingState(loading) {
-        // Implementar indicador de carga si es necesario
         if (loading) {
             document.body.style.cursor = 'wait';
+            // Opcionalmente, mostrar un spinner
         } else {
             document.body.style.cursor = 'default';
         }
@@ -447,7 +329,10 @@ document.addEventListener('DOMContentLoaded', function() {
         // Crear elemento de notificación
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
-        notification.textContent = message;
+        notification.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            ${message}
+        `;
         
         // Agregar al body
         document.body.appendChild(notification);
@@ -468,18 +353,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function redirectToLogin() {
-        window.location.href = '/pages/login.html';
+        // Ajusta esta ruta según tu estructura de carpetas
+        window.location.href = '../pages/login.html';
     }
 
     // Manejar errores no capturados
     window.addEventListener('error', function(e) {
         console.error('Error no capturado:', e.error);
-        showError('Ha ocurrido un error inesperado');
     });
 
     // Manejar promesas rechazadas no capturadas
     window.addEventListener('unhandledrejection', function(e) {
         console.error('Promesa rechazada no capturada:', e.reason);
-        showError('Ha ocurrido un error inesperado');
     });
+
+    // Verificar expiración del token cada minuto
+    setInterval(() => {
+        if (tokenClaims && tokenClaims.exp) {
+            const now = Date.now() / 1000;
+            if (now > tokenClaims.exp) {
+                showError('Tu sesión ha expirado. Serás redirigido al login.');
+                setTimeout(() => redirectToLogin(), 2000);
+            }
+        }
+    }, 60000); // Cada minuto
 });

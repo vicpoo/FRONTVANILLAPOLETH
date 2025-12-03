@@ -1,4 +1,3 @@
-// cuartos-muebles.js
 class CuartosMueblesManager {
     constructor() {
         this.cuartos = [];
@@ -10,42 +9,122 @@ class CuartosMueblesManager {
         this.currentAction = null;
         this.currentCuartoForAssignment = null;
         this.API_BASE = 'http://localhost:8000/api';
+        this.token = localStorage.getItem('authToken');
         this.init();
     }
 
     async init() {
         this.bindEvents();
-        await this.loadPropietarios();
+        await this.loadPropietarios(); // Solo cargará usuarios con rol ID 1
         await this.loadCuartos();
         await this.loadMuebles();
         await this.loadCuartoMuebles();
         this.updateStats();
     }
 
+    async makeRequest(url, options = {}) {
+        try {
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': this.token ? `Bearer ${this.token}` : ''
+                }
+            };
+
+            const finalOptions = { ...defaultOptions, ...options };
+            
+            const response = await fetch(`${this.API_BASE}${url}`, finalOptions);
+
+            if (!response.ok) {
+                let errorMsg = `Error ${response.status}: ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    errorMsg = errorData.message || errorData.error || errorMsg;
+                } catch (e) {
+                    // Si no podemos parsear el error, usamos el mensaje por defecto
+                }
+                throw new Error(errorMsg);
+            }
+
+            // Para respuestas vacías (DELETE, etc)
+            if (response.status === 204) {
+                return null;
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Error en la petición:', error);
+            throw error;
+        }
+    }
+
     async loadPropietarios() {
         try {
-            const response = await fetch(`${this.API_BASE}/propietarios`);
+            console.log('Cargando propietarios (usuarios con rol ID 1)...');
             
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
+            // Intentar cargar usuarios específicamente con rol 1
+            const data = await this.makeRequest('/usuarios');
+            
+            if (Array.isArray(data)) {
+                // Filtrar usuarios con rol ID 1
+                this.propietarios = data
+                    .filter(usuario => {
+                        if (!usuario.rol) return false;
+                        
+                        // Verificar diferentes formas en que podría venir el rol ID
+                        const rolId = usuario.rol.idRoles || usuario.rol.idRol || usuario.rol.id;
+                        
+                        // Solo usuarios con rol ID 1
+                        return rolId === 1;
+                    })
+                    .map(usuario => {
+                        console.log('Usuario con rol 1 encontrado:', usuario);
+                        return {
+                            idPropietario: usuario.idUsuario,
+                            nombre: usuario.username || 'Sin nombre',
+                            gmail: usuario.email || '',
+                            rol: usuario.rol ? usuario.rol.titulo : 'Rol 1'
+                        };
+                    });
+                
+                console.log(`Propietarios encontrados (rol 1): ${this.propietarios.length}`);
+            } else {
+                console.warn('La respuesta de usuarios no es un array:', data);
+                this.propietarios = [];
             }
             
-            const data = await response.json();
-            this.propietarios = Array.isArray(data) ? data : [];
             this.renderPropietariosSelect();
             this.updateStats();
+            
+            // Si no encontramos usuarios con rol 1, mostrar advertencia
+            if (this.propietarios.length === 0) {
+                console.warn('No se encontraron usuarios con rol ID 1');
+                this.showWarning('No hay usuarios con rol de propietario (rol ID 1) registrados. No se podrán crear cuartos.');
+            }
         } catch (error) {
-            console.error('Error cargando propietarios:', error);
+            console.warn('Error cargando propietarios:', error.message);
             this.propietarios = [];
-            this.showError('Error al cargar los propietarios: ' + error.message);
+            this.renderPropietariosSelect();
         }
     }
 
     renderPropietariosSelect() {
         const select = document.getElementById('propietarioCuarto');
-        if (!select) return;
+        if (!select) {
+            console.error('Elemento propietarioCuarto no encontrado en el DOM');
+            return;
+        }
         
         select.innerHTML = '<option value="">Seleccionar propietario...</option>';
+        
+        if (this.propietarios.length === 0) {
+            const option = document.createElement('option');
+            option.value = "";
+            option.textContent = "No hay usuarios con rol de propietario disponibles";
+            option.disabled = true;
+            select.appendChild(option);
+            return;
+        }
         
         this.propietarios.forEach(propietario => {
             const option = document.createElement('option');
@@ -57,29 +136,73 @@ class CuartosMueblesManager {
 
     bindEvents() {
         // Botones principales
-        document.getElementById('btnNuevoCuarto').addEventListener('click', () => this.showModalCuarto());
-        document.getElementById('btnNuevoMueble').addEventListener('click', () => this.showModalMueble());
+        const btnNuevoCuarto = document.getElementById('btnNuevoCuarto');
+        const btnNuevoMueble = document.getElementById('btnNuevoMueble');
+        
+        if (btnNuevoCuarto) {
+            btnNuevoCuarto.addEventListener('click', () => this.showModalCuarto());
+        } else {
+            console.error('Botón btnNuevoCuarto no encontrado');
+        }
+        
+        if (btnNuevoMueble) {
+            btnNuevoMueble.addEventListener('click', () => this.showModalMueble());
+        } else {
+            console.error('Botón btnNuevoMueble no encontrado');
+        }
         
         // Modal events - Cerrar modales
         document.querySelectorAll('.close').forEach(closeBtn => {
             closeBtn.addEventListener('click', () => this.hideModals());
         });
         
-        document.getElementById('btnCancelarCuarto').addEventListener('click', () => this.hideModals());
-        document.getElementById('btnCancelarMueble').addEventListener('click', () => this.hideModals());
-        document.getElementById('btnCancelarAccion').addEventListener('click', () => this.hideModals());
-        document.getElementById('btnCerrarAsignar').addEventListener('click', () => this.hideModals());
+        const btnCancelarCuarto = document.getElementById('btnCancelarCuarto');
+        if (btnCancelarCuarto) {
+            btnCancelarCuarto.addEventListener('click', () => this.hideModals());
+        }
+        
+        const btnCancelarMueble = document.getElementById('btnCancelarMueble');
+        if (btnCancelarMueble) {
+            btnCancelarMueble.addEventListener('click', () => this.hideModals());
+        }
+        
+        const btnCancelarAccion = document.getElementById('btnCancelarAccion');
+        if (btnCancelarAccion) {
+            btnCancelarAccion.addEventListener('click', () => this.hideModals());
+        }
+        
+        const btnCerrarAsignar = document.getElementById('btnCerrarAsignar');
+        if (btnCerrarAsignar) {
+            btnCerrarAsignar.addEventListener('click', () => this.hideModals());
+        }
         
         // Form events
-        document.getElementById('cuartoForm').addEventListener('submit', (e) => this.guardarCuarto(e));
-        document.getElementById('muebleForm').addEventListener('submit', (e) => this.guardarMueble(e));
+        const cuartoForm = document.getElementById('cuartoForm');
+        if (cuartoForm) {
+            cuartoForm.addEventListener('submit', (e) => this.guardarCuarto(e));
+        }
+        
+        const muebleForm = document.getElementById('muebleForm');
+        if (muebleForm) {
+            muebleForm.addEventListener('submit', (e) => this.guardarMueble(e));
+        }
         
         // Search
-        document.getElementById('searchCuartosInput').addEventListener('input', (e) => this.buscarCuartos(e.target.value));
-        document.getElementById('searchMueblesInput').addEventListener('input', (e) => this.buscarMuebles(e.target.value));
+        const searchCuartosInput = document.getElementById('searchCuartosInput');
+        if (searchCuartosInput) {
+            searchCuartosInput.addEventListener('input', (e) => this.buscarCuartos(e.target.value));
+        }
+        
+        const searchMueblesInput = document.getElementById('searchMueblesInput');
+        if (searchMueblesInput) {
+            searchMueblesInput.addEventListener('input', (e) => this.buscarMuebles(e.target.value));
+        }
         
         // Confirmación
-        document.getElementById('btnConfirmarAccion').addEventListener('click', () => this.confirmarAccion());
+        const btnConfirmarAccion = document.getElementById('btnConfirmarAccion');
+        if (btnConfirmarAccion) {
+            btnConfirmarAccion.addEventListener('click', () => this.confirmarAccion());
+        }
         
         // Cerrar modal al hacer clic fuera
         window.addEventListener('click', (e) => {
@@ -93,19 +216,15 @@ class CuartosMueblesManager {
     async loadCuartos() {
         try {
             this.showLoading(true);
-            const response = await fetch(`${this.API_BASE}/cuartos`);
-            
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
+            const data = await this.makeRequest('/cuartos');
             this.cuartos = Array.isArray(data) ? data : [];
             this.renderCuartos();
             this.updateStats();
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error cargando cuartos:', error);
             this.showError('Error al cargar los cuartos: ' + error.message);
+            this.cuartos = [];
+            this.renderCuartos();
         } finally {
             this.showLoading(false);
         }
@@ -113,6 +232,10 @@ class CuartosMueblesManager {
 
     renderCuartos(cuartos = this.cuartos) {
         const tbody = document.getElementById('cuartosTableBody');
+        if (!tbody) {
+            console.error('Elemento cuartosTableBody no encontrado');
+            return;
+        }
         
         if (cuartos.length === 0) {
             tbody.innerHTML = `
@@ -127,8 +250,15 @@ class CuartosMueblesManager {
         }
 
         tbody.innerHTML = cuartos.map(cuarto => {
+            // Buscar propietario
+            let nombrePropietario = 'Desconocido';
             const propietario = this.propietarios.find(p => p.idPropietario === cuarto.idPropietario);
-            const nombrePropietario = propietario ? propietario.nombre : 'Desconocido';
+            if (propietario) {
+                nombrePropietario = propietario.nombre;
+            } else if (cuarto.propietario) {
+                // Si el cuarto trae el objeto propietario
+                nombrePropietario = cuarto.propietario.username || 'Desconocido';
+            }
             
             return `
                 <tr>
@@ -161,7 +291,7 @@ class CuartosMueblesManager {
     showModalCuarto(cuarto = null) {
         // Verificar que tenemos propietarios antes de mostrar el modal
         if (this.propietarios.length === 0) {
-            this.showError('No hay propietarios registrados. Por favor, crea un propietario primero.');
+            this.showError('No hay usuarios con rol de propietario (rol ID 1) registrados. Por favor, crea un usuario con rol de propietario primero.');
             return;
         }
 
@@ -170,12 +300,20 @@ class CuartosMueblesManager {
         const title = document.getElementById('modalCuartoTitle');
         const form = document.getElementById('cuartoForm');
 
+        if (!modal || !title || !form) {
+            console.error('Elementos del modal no encontrados');
+            this.showError('Error: Elementos del formulario no encontrados');
+            return;
+        }
+
         if (cuarto) {
             title.textContent = 'Editar Cuarto';
             this.populateCuartoForm(cuarto);
         } else {
             title.textContent = 'Nuevo Cuarto';
             form.reset();
+            // Establecer estado por defecto
+            document.getElementById('estadoCuarto').value = '';
         }
 
         modal.style.display = 'block';
@@ -197,9 +335,8 @@ class CuartosMueblesManager {
     async guardarCuarto(e) {
         e.preventDefault();
         
-        // Verificar que tenemos propietarios
         if (this.propietarios.length === 0) {
-            this.showError('No hay propietarios registrados. No se puede guardar el cuarto.');
+            this.showError('No hay usuarios con rol de propietario (rol ID 1) registrados. No se puede guardar el cuarto.');
             return;
         }
         
@@ -210,7 +347,7 @@ class CuartosMueblesManager {
             const idPropietario = parseInt(formData.get('propietarioCuarto'));
             
             if (!idPropietario) {
-                throw new Error('Debe seleccionar un propietario');
+                throw new Error('Debe seleccionar un usuario con rol de propietario');
             }
 
             const cuartoData = {
@@ -221,40 +358,30 @@ class CuartosMueblesManager {
                 descripcionCuarto: formData.get('descripcionCuarto') || null
             };
 
-            // Validaciones adicionales
+            // Validaciones
             if (!cuartoData.nombreCuarto) {
                 throw new Error('El nombre del cuarto es requerido');
             }
 
-            let url = `${this.API_BASE}/cuartos`;
+            let url = '/cuartos';
             let method = 'POST';
 
             if (this.currentCuarto) {
-                url = `${this.API_BASE}/cuartos/${this.currentCuarto.idCuarto}`;
+                url = `/cuartos/${this.currentCuarto.idCuarto}`;
                 method = 'PUT';
             }
 
-            const response = await fetch(url, {
+            const responseData = await this.makeRequest(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(cuartoData)
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al guardar el cuarto');
-            }
-
-            const responseData = await response.json();
 
             this.showSuccess(`Cuarto ${this.currentCuarto ? 'actualizado' : 'creado'} correctamente`);
             this.hideModals();
             await this.loadCuartos();
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error guardando cuarto:', error);
             this.showError(error.message);
         } finally {
             this.showLoading(false, 'btnGuardarCuarto');
@@ -298,24 +425,24 @@ class CuartosMueblesManager {
     // ==================== MUEBLES ====================
     async loadMuebles() {
         try {
-            const response = await fetch(`${this.API_BASE}/catalogo-muebles`);
-            
-            if (!response.ok) {
-                throw new Error(`Error ${response.status}: ${response.statusText}`);
-            }
-            
-            const data = await response.json();
+            const data = await this.makeRequest('/catalogo-muebles');
             this.muebles = Array.isArray(data) ? data : [];
             this.renderMuebles();
             this.updateStats();
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error cargando muebles:', error);
             this.showError('Error al cargar los muebles: ' + error.message);
+            this.muebles = [];
+            this.renderMuebles();
         }
     }
 
     renderMuebles(muebles = this.muebles) {
         const tbody = document.getElementById('mueblesTableBody');
+        if (!tbody) {
+            console.error('Elemento mueblesTableBody no encontrado');
+            return;
+        }
         
         if (muebles.length === 0) {
             tbody.innerHTML = `
@@ -352,6 +479,12 @@ class CuartosMueblesManager {
         const title = document.getElementById('modalMuebleTitle');
         const form = document.getElementById('muebleForm');
 
+        if (!modal || !title || !form) {
+            console.error('Elementos del modal de muebles no encontrados');
+            this.showError('Error: Elementos del formulario de muebles no encontrados');
+            return;
+        }
+
         if (mueble) {
             title.textContent = 'Editar Mueble';
             this.populateMuebleForm(mueble);
@@ -378,43 +511,34 @@ class CuartosMueblesManager {
             
             const muebleData = {
                 nombreMueble: formData.get('nombreMueble').trim(),
-                descripcion: formData.get('descripcionMueble') || null
+                descripcion: formData.get('descripcionMueble') || null,
+                estadoMueble: "activo" // Estado por defecto
             };
 
-            // Validaciones adicionales
+            // Validaciones
             if (!muebleData.nombreMueble) {
                 throw new Error('El nombre del mueble es requerido');
             }
 
-            let url = `${this.API_BASE}/catalogo-muebles`;
+            let url = '/catalogo-muebles';
             let method = 'POST';
 
             if (this.currentMueble) {
-                url = `${this.API_BASE}/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`;
+                url = `/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`;
                 method = 'PUT';
             }
 
-            const response = await fetch(url, {
+            const responseData = await this.makeRequest(url, {
                 method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(muebleData)
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al guardar el mueble');
-            }
-
-            const responseData = await response.json();
 
             this.showSuccess(`Mueble ${this.currentMueble ? 'actualizado' : 'creado'} correctamente`);
             this.hideModals();
             await this.loadMuebles();
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error guardando mueble:', error);
             this.showError(error.message);
         } finally {
             this.showLoading(false, 'btnGuardarMueble');
@@ -457,20 +581,11 @@ class CuartosMueblesManager {
     // ==================== CUARTO MUEBLES ====================
     async loadCuartoMuebles() {
         try {
-            const response = await fetch(`${this.API_BASE}/cuarto-muebles`);
-            
-            if (!response.ok) {
-                // Si falla, no es crítico, continuamos sin las asignaciones
-                console.warn('No se pudieron cargar las asignaciones de muebles');
-                this.cuartoMuebles = [];
-                return;
-            }
-            
-            const data = await response.json();
+            const data = await this.makeRequest('/cuarto-muebles');
             this.cuartoMuebles = Array.isArray(data) ? data : [];
             this.updateStats();
         } catch (error) {
-            console.error('Error:', error);
+            console.warn('No se pudieron cargar las asignaciones de muebles:', error.message);
             this.cuartoMuebles = [];
         }
     }
@@ -486,6 +601,12 @@ class CuartosMueblesManager {
         const modal = document.getElementById('modalAsignarMuebles');
         const title = document.getElementById('modalAsignarTitle');
         
+        if (!modal || !title) {
+            console.error('Modal de asignación no encontrado');
+            this.showError('Error: Modal de asignación no encontrado');
+            return;
+        }
+        
         title.textContent = `Asignar Muebles al Cuarto: ${this.currentCuartoForAssignment.nombreCuarto}`;
         
         await this.renderMueblesAsignacion(idCuarto);
@@ -497,10 +618,15 @@ class CuartosMueblesManager {
         const disponiblesContainer = document.getElementById('mueblesDisponiblesList');
         const asignadosContainer = document.getElementById('mueblesAsignadosList');
 
+        if (!disponiblesContainer || !asignadosContainer) {
+            console.error('Contenedores de muebles no encontrados');
+            this.showError('Error: Contenedores de muebles no encontrados');
+            return;
+        }
+
         try {
             // Obtener muebles asignados a este cuarto
-            const response = await fetch(`${this.API_BASE}/cuarto-muebles/cuarto/${idCuarto}`);
-            const mueblesAsignados = response.ok ? await response.json() : [];
+            const mueblesAsignados = await this.makeRequest(`/cuarto-muebles/cuarto/${idCuarto}`) || [];
 
             // Separar muebles disponibles y asignados
             const idsAsignados = mueblesAsignados.map(cm => cm.idCatalogoMueble);
@@ -544,8 +670,8 @@ class CuartosMueblesManager {
                 : '<p style="text-align: center; color: var(--dark-gray);">No hay muebles asignados</p>';
 
         } catch (error) {
-            console.error('Error:', error);
-            this.showError('Error al cargar los muebles del cuarto');
+            console.error('Error cargando muebles del cuarto:', error);
+            this.showError('Error al cargar los muebles del cuarto: ' + error.message);
         }
     }
 
@@ -555,42 +681,29 @@ class CuartosMueblesManager {
                 idCuarto: idCuarto,
                 idCatalogoMueble: idCatalogoMueble,
                 cantidad: 1,
-                estado: null
+                estado: "bueno" // Estado por defecto
             };
 
-            const response = await fetch(`${this.API_BASE}/cuarto-muebles`, {
+            await this.makeRequest('/cuarto-muebles', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify(cuartoMuebleData)
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al agregar el mueble al cuarto');
-            }
 
             this.showSuccess('Mueble agregado correctamente al cuarto');
             await this.renderMueblesAsignacion(idCuarto);
             await this.loadCuartoMuebles();
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error agregando mueble al cuarto:', error);
             this.showError(error.message);
         }
     }
 
     async removerMuebleDeCuarto(idCuartoMueble) {
         try {
-            const response = await fetch(`${this.API_BASE}/cuarto-muebles/${idCuartoMueble}`, {
+            await this.makeRequest(`/cuarto-muebles/${idCuartoMueble}`, {
                 method: 'DELETE'
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al remover el mueble del cuarto');
-            }
 
             this.showSuccess('Mueble removido correctamente del cuarto');
             if (this.currentCuartoForAssignment) {
@@ -599,7 +712,7 @@ class CuartosMueblesManager {
             await this.loadCuartoMuebles();
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error removiendo mueble del cuarto:', error);
             this.showError(error.message);
         }
     }
@@ -612,56 +725,58 @@ class CuartosMueblesManager {
                 return;
             }
 
-            const response = await fetch(`${this.API_BASE}/cuarto-muebles/${idCuartoMueble}/cantidad`, {
+            await this.makeRequest(`/cuarto-muebles/${idCuartoMueble}/cantidad`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ cantidad: cantidad })
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(errorText || 'Error al actualizar la cantidad');
-            }
 
             this.showSuccess('Cantidad actualizada correctamente');
             await this.loadCuartoMuebles();
 
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error actualizando cantidad:', error);
             this.showError(error.message);
         }
     }
 
     // ==================== UTILIDADES ====================
     getStatusClass(status) {
-        if (!status || status === '') return 'status-disponible';
+        if (!status || status === '' || status === 'disponible' || status === 'Disponible') 
+            return 'status-disponible';
         
         const statusMap = {
+            'ocupado': 'status-ocupado',
             'Ocupado': 'status-ocupado',
-            'Mantenimiento': 'status-mantenimiento',
-            'Disponible': 'status-disponible'
+            'mantenimiento': 'status-mantenimiento',
+            'Mantenimiento': 'status-mantenimiento'
         };
         return statusMap[status] || 'status-disponible';
     }
 
     updateStats() {
+        // Actualizar estadísticas
         const totalCuartos = this.cuartos.length;
-        const cuartosDisponibles = this.cuartos.filter(c => !c.estadoCuarto || c.estadoCuarto === '' || c.estadoCuarto === 'Disponible').length;
+        const cuartosDisponibles = this.cuartos.filter(c => 
+            !c.estadoCuarto || 
+            c.estadoCuarto === '' || 
+            c.estadoCuarto.toLowerCase() === 'disponible'
+        ).length;
         const totalMuebles = this.muebles.length;
         const totalAsignaciones = this.cuartoMuebles.length;
         const totalPropietarios = this.propietarios.length;
 
-        document.getElementById('totalCuartos').textContent = totalCuartos;
-        document.getElementById('cuartosDisponibles').textContent = cuartosDisponibles;
-        document.getElementById('totalMuebles').textContent = totalMuebles;
-        document.getElementById('totalAsignaciones').textContent = totalAsignaciones;
-        
-        // Actualizar estadística de propietarios si existe
-        const totalPropietariosElement = document.getElementById('totalPropietarios');
-        if (totalPropietariosElement) {
-            totalPropietariosElement.textContent = totalPropietarios;
+        // Actualizar elementos del DOM si existen
+        this.updateElementContent('totalCuartos', totalCuartos);
+        this.updateElementContent('cuartosDisponibles', cuartosDisponibles);
+        this.updateElementContent('totalMuebles', totalMuebles);
+        this.updateElementContent('totalAsignaciones', totalAsignaciones);
+        this.updateElementContent('totalPropietarios', totalPropietarios);
+    }
+
+    updateElementContent(elementId, content) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = content;
         }
     }
 
@@ -669,6 +784,13 @@ class CuartosMueblesManager {
         this.currentAction = action;
         const modal = document.getElementById('modalConfirmacion');
         const messageElement = document.getElementById('confirmacionMensaje');
+        
+        if (!modal || !messageElement) {
+            console.error('Modal de confirmación no encontrado');
+            this.showError('Error: Modal de confirmación no encontrado');
+            return;
+        }
+        
         messageElement.textContent = message;
         modal.style.display = 'block';
     }
@@ -678,28 +800,19 @@ class CuartosMueblesManager {
             this.showLoading(true, 'btnConfirmarAccion');
             
             if (this.currentAction === 'eliminarCuarto' && this.currentCuarto) {
-                const response = await fetch(`${this.API_BASE}/cuartos/${this.currentCuarto.idCuarto}`, {
+                await this.makeRequest(`/cuartos/${this.currentCuarto.idCuarto}`, {
                     method: 'DELETE'
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Error al eliminar el cuarto');
-                }
 
                 this.showSuccess('Cuarto eliminado correctamente');
                 this.hideModals();
                 await this.loadCuartos();
                 await this.loadCuartoMuebles();
+                
             } else if (this.currentAction === 'eliminarMueble' && this.currentMueble) {
-                const response = await fetch(`${this.API_BASE}/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`, {
+                await this.makeRequest(`/catalogo-muebles/${this.currentMueble.idCatalogoMueble}`, {
                     method: 'DELETE'
                 });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'Error al eliminar el mueble');
-                }
 
                 this.showSuccess('Mueble eliminado correctamente');
                 this.hideModals();
@@ -707,7 +820,7 @@ class CuartosMueblesManager {
                 await this.loadCuartoMuebles();
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error confirmando acción:', error);
             this.showError(error.message);
         } finally {
             this.showLoading(false, 'btnConfirmarAccion');
@@ -727,6 +840,8 @@ class CuartosMueblesManager {
     showLoading(show, buttonId = null) {
         if (buttonId) {
             const button = document.getElementById(buttonId);
+            if (!button) return;
+            
             if (show) {
                 button.disabled = true;
                 button.innerHTML = '<span class="spinner"></span> Procesando...';
@@ -751,29 +866,57 @@ class CuartosMueblesManager {
         this.showNotification(message, 'error');
     }
 
+    showWarning(message) {
+        this.showNotification(message, 'warning');
+    }
+
     showNotification(message, type) {
         // Eliminar notificaciones existentes
         document.querySelectorAll('.notification').forEach(notif => notif.remove());
 
         const notification = document.createElement('div');
         notification.className = `notification ${type}`;
+        
+        // Colores según el tipo
+        let backgroundColor = '#28a745'; // success por defecto
+        if (type === 'error') backgroundColor = '#dc3545';
+        if (type === 'warning') backgroundColor = '#ffc107';
+        
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 15px 20px;
-            background: ${type === 'success' ? '#28a745' : '#dc3545'};
-            color: white;
+            background: ${backgroundColor};
+            color: ${type === 'warning' ? '#212529' : 'white'};
             border-radius: 6px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             z-index: 10000;
             animation: slideInRight 0.3s ease;
             max-width: 400px;
             word-wrap: break-word;
+            font-weight: 500;
         `;
         notification.textContent = message;
 
         document.body.appendChild(notification);
+
+        // Crear animación de entrada si no existe
+        if (!document.getElementById('notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
 
         setTimeout(() => {
             notification.style.animation = 'slideOutRight 0.3s ease';
@@ -799,5 +942,33 @@ class CuartosMueblesManager {
 
 // Inicializar la aplicación cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+    // Verificar autenticación
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        // Si no está autenticado, redirigir al login
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Crear instancia global
     window.cuartosMueblesManager = new CuartosMueblesManager();
+    
+    // Agregar estilos CSS para el spinner
+    const style = document.createElement('style');
+    style.textContent = `
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
 });
